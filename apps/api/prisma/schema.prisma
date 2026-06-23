@@ -1,0 +1,451 @@
+// Esquema Prisma — Click Viajes
+// Multi-tenant por fila compartida (cada entidad de negocio lleva tenantId).
+// Montos en Decimal + Currency (nunca float).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ───────────── Enums ─────────────
+enum Currency {
+  PYG
+  USD
+  BRL
+  ARS
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  AGENCY_ADMIN
+  SELLER
+}
+
+enum TenantStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+enum DocumentType {
+  PASSPORT
+  VISA
+  ID_CARD
+  OTHER
+}
+
+enum SupplierType {
+  HOTEL
+  TRANSPORT
+  GUIDE
+  INSURANCE
+  OTHER
+}
+
+enum TripStatus {
+  SCHEDULED
+  IN_PROGRESS
+  FINISHED
+  CANCELLED
+}
+
+enum QuoteStatus {
+  DRAFT
+  SENT
+  ACCEPTED
+  REJECTED
+  EXPIRED
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+}
+
+enum InstallmentStatus {
+  PENDING
+  PARTIAL
+  PAID
+  OVERDUE
+}
+
+enum PaymentMethod {
+  CASH
+  TRANSFER
+  CARD
+}
+
+// ───────────── Plataforma / Tenant ─────────────
+model Tenant {
+  id           String       @id @default(cuid())
+  name         String
+  slug         String       @unique // base para futuro subdominio
+  baseCurrency Currency     @default(PYG)
+  status       TenantStatus @default(ACTIVE)
+  // Preparado para SaaS (inactivo por ahora):
+  planId       String?
+  maxUsers     Int?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  plan          Plan?          @relation(fields: [planId], references: [id])
+  users         User[]
+  customers     Customer[]
+  destinations  Destination[]
+  suppliers     Supplier[]
+  packages      Package[]
+  trips         Trip[]
+  quotes        Quote[]
+  bookings      Booking[]
+  payments      Payment[]
+  exchangeRates ExchangeRate[]
+}
+
+// SaaS futuro (definido, sin uso aún)
+model Plan {
+  id       String   @id @default(cuid())
+  name     String
+  maxUsers Int?
+  price    Decimal? @db.Decimal(14, 4)
+  currency Currency @default(USD)
+  tenants  Tenant[]
+}
+
+model User {
+  id             String    @id @default(cuid())
+  tenantId       String? // null = SUPER_ADMIN (nivel plataforma)
+  email          String    @unique
+  passwordHash   String
+  fullName       String
+  role           UserRole  @default(SELLER)
+  commissionRate Decimal?  @db.Decimal(5, 2) // % sobre venta (solo SELLER)
+  isActive       Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  tenant        Tenant?        @relation(fields: [tenantId], references: [id])
+  refreshTokens RefreshToken[]
+
+  @@index([tenantId])
+}
+
+model RefreshToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String
+  expiresAt DateTime
+  revokedAt DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model ExchangeRate {
+  id           String   @id @default(cuid())
+  tenantId     String
+  fromCurrency Currency
+  toCurrency   Currency
+  rate         Decimal  @db.Decimal(18, 6)
+  date         DateTime // fecha de vigencia de la tasa
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@index([tenantId, fromCurrency, toCurrency, date])
+}
+
+// ───────────── CRM ─────────────
+model Customer {
+  id        String    @id @default(cuid())
+  tenantId  String
+  firstName String
+  lastName  String
+  ci        String?
+  ruc       String? // autocompletado desde CI, editable
+  email     String?
+  phone     String?
+  address   String?
+  birthDate DateTime?
+  notes     String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  tenant     Tenant             @relation(fields: [tenantId], references: [id])
+  documents  CustomerDocument[]
+  quotes     Quote[]
+  bookings   Booking[]
+  passengers Passenger[]
+
+  @@index([tenantId])
+  @@index([tenantId, ci])
+}
+
+model CustomerDocument {
+  id         String       @id @default(cuid())
+  tenantId   String
+  customerId String
+  type       DocumentType
+  number     String
+  issueDate  DateTime?
+  expiryDate DateTime? // base para alertas de vencimiento
+  notes      String?
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, expiryDate])
+}
+
+// ───────────── Destinos ─────────────
+model Destination {
+  id                String   @id @default(cuid())
+  tenantId          String
+  name              String
+  country           String
+  city              String?
+  description       String?
+  recommendedSeason String?
+  photos            String[] // URLs
+
+  tenant       Tenant               @relation(fields: [tenantId], references: [id])
+  attractions  Attraction[]
+  tripLinks    TripDestination[]
+  packageLinks PackageDestination[]
+
+  @@index([tenantId])
+}
+
+model Attraction {
+  id            String  @id @default(cuid())
+  tenantId      String
+  destinationId String
+  name          String
+  description   String?
+
+  destination Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+}
+
+// ───────────── Proveedores ─────────────
+model Supplier {
+  id       String       @id @default(cuid())
+  tenantId String
+  name     String
+  type     SupplierType
+  email    String?
+  phone    String?
+  notes    String?
+
+  tenant    Tenant         @relation(fields: [tenantId], references: [id])
+  tripCosts TripSupplier[]
+
+  @@index([tenantId])
+}
+
+// ───────────── Paquetes (plantillas) ─────────────
+model Package {
+  id          String   @id @default(cuid())
+  tenantId    String
+  name        String
+  description String?
+  basePrice   Decimal? @db.Decimal(14, 4)
+  currency    Currency @default(USD)
+
+  tenant       Tenant                 @relation(fields: [tenantId], references: [id])
+  destinations PackageDestination[]
+  itinerary    PackageItineraryItem[]
+  trips        Trip[]
+
+  @@index([tenantId])
+}
+
+model PackageDestination {
+  packageId     String
+  destinationId String
+
+  package     Package     @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  destination Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+
+  @@id([packageId, destinationId])
+}
+
+model PackageItineraryItem {
+  id          String  @id @default(cuid())
+  packageId   String
+  dayNumber   Int
+  title       String
+  description String?
+
+  package Package @relation(fields: [packageId], references: [id], onDelete: Cascade)
+}
+
+// ───────────── Viajes / Salidas programadas ─────────────
+model Trip {
+  id           String     @id @default(cuid())
+  tenantId     String
+  packageId    String?
+  name         String
+  startDate    DateTime
+  endDate      DateTime
+  capacity     Int // cupo máximo
+  bookedSeats  Int        @default(0) // denormalizado, mantenido en transacción
+  status       TripStatus @default(SCHEDULED)
+  salePrice    Decimal    @db.Decimal(14, 4)
+  saleCurrency Currency   @default(PYG)
+
+  tenant       Tenant              @relation(fields: [tenantId], references: [id])
+  package      Package?            @relation(fields: [packageId], references: [id])
+  destinations TripDestination[]
+  itinerary    TripItineraryItem[]
+  suppliers    TripSupplier[]
+  quotes       Quote[]
+  bookings     Booking[]
+
+  @@index([tenantId, startDate])
+  @@index([tenantId, status])
+}
+
+model TripDestination {
+  tripId        String
+  destinationId String
+
+  trip        Trip        @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  destination Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+
+  @@id([tripId, destinationId])
+}
+
+model TripItineraryItem {
+  id          String    @id @default(cuid())
+  tripId      String
+  dayNumber   Int
+  date        DateTime?
+  title       String
+  description String?
+
+  trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+}
+
+model TripSupplier {
+  id           String   @id @default(cuid())
+  tenantId     String
+  tripId       String
+  supplierId   String
+  description  String?
+  cost         Decimal  @db.Decimal(14, 4) // costo para calcular margen
+  costCurrency Currency @default(USD)
+
+  trip     Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  supplier Supplier @relation(fields: [supplierId], references: [id])
+
+  @@index([tenantId, tripId])
+}
+
+// ───────────── Cotizaciones ─────────────
+model Quote {
+  id          String      @id @default(cuid())
+  tenantId    String
+  customerId  String
+  tripId      String?
+  sellerId    String
+  status      QuoteStatus @default(DRAFT)
+  validUntil  DateTime?
+  totalAmount Decimal     @db.Decimal(14, 4)
+  currency    Currency    @default(PYG)
+  notes       String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id])
+  customer Customer @relation(fields: [customerId], references: [id])
+  trip     Trip?    @relation(fields: [tripId], references: [id])
+  booking  Booking? // si se convierte en reserva
+
+  @@index([tenantId, status])
+}
+
+// ───────────── Reservas ─────────────
+model Booking {
+  id               String        @id @default(cuid())
+  tenantId         String
+  customerId       String // titular (Cliente del CRM)
+  tripId           String
+  sellerId         String
+  quoteId          String?       @unique
+  status           BookingStatus @default(PENDING)
+  paxCount         Int
+  totalAmount      Decimal       @db.Decimal(14, 4)
+  currency         Currency      @default(PYG)
+  commissionRate   Decimal?      @db.Decimal(5, 2) // % sobre venta
+  commissionAmount Decimal?      @db.Decimal(14, 4)
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  tenant       Tenant        @relation(fields: [tenantId], references: [id])
+  customer     Customer      @relation(fields: [customerId], references: [id])
+  trip         Trip          @relation(fields: [tripId], references: [id])
+  quote        Quote?        @relation(fields: [quoteId], references: [id])
+  passengers   Passenger[]
+  installments Installment[]
+  payments     Payment[]
+
+  @@index([tenantId, status])
+}
+
+model Passenger {
+  id         String        @id @default(cuid())
+  tenantId   String
+  bookingId  String
+  customerId String? // opcional: vínculo al CRM
+  firstName  String
+  lastName   String
+  docType    DocumentType?
+  docNumber  String?
+  birthDate  DateTime?
+
+  booking  Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  customer Customer? @relation(fields: [customerId], references: [id])
+
+  @@index([tenantId, bookingId])
+}
+
+// ───────────── Pagos / Cuotas ─────────────
+model Installment {
+  id        String            @id @default(cuid())
+  tenantId  String
+  bookingId String
+  number    Int // nº de cuota
+  dueDate   DateTime
+  amount    Decimal           @db.Decimal(14, 4)
+  currency  Currency
+  status    InstallmentStatus @default(PENDING)
+
+  booking  Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  payments Payment[]
+
+  @@index([tenantId, dueDate])
+}
+
+model Payment {
+  id            String        @id @default(cuid())
+  tenantId      String
+  bookingId     String
+  installmentId String?
+  amount        Decimal       @db.Decimal(14, 4)
+  currency      Currency
+  rateToBase    Decimal?      @db.Decimal(18, 6) // tasa aplicada congelada
+  method        PaymentMethod
+  paidAt        DateTime      @default(now())
+  receiptNumber String?
+  receivedById  String
+
+  tenant      Tenant       @relation(fields: [tenantId], references: [id])
+  booking     Booking      @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  installment Installment? @relation(fields: [installmentId], references: [id])
+
+  @@index([tenantId, paidAt])
+}

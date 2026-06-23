@@ -1,0 +1,21 @@
+{
+  "name": "clickviajes",
+  "version": "0.0.0",
+  "private": true,
+  "packageManager": "pnpm@11.8.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "pnpm --parallel --filter \"./apps/*\" dev",
+    "dev:api": "pnpm --filter @clickviajes/api dev",
+    "dev:web": "pnpm --filter @clickviajes/web dev",
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test",
+    "db:generate": "pnpm --filter @clickviajes/api prisma:generate",
+    "db:migrate": "pnpm --filter @clickviajes/api prisma:migrate",
+    "db:seed": "pnpm --filter @clickviajes/api db:seed",
+    "db:studio": "pnpm --filter @clickviajes/api prisma:studio"
+  }
+}

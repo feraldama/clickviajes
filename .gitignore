@@ -1,0 +1,50 @@
+# Dependencias
+node_modules/
+.pnp.*
+.yarn/
+
+# Variables de entorno (¡nunca commitear secretos!)
+.env
+.env.*
+!.env.example
+
+# Builds / salidas
+dist/
+build/
+.next/
+out/
+coverage/
+
+# Prisma
+prisma/*.db
+prisma/migrations/dev.db*
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Editor / SO
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# Temporales
+*.tmp
+.cache/
+
+# TypeScript / Next generados
+*.tsbuildinfo
+next-env.d.ts
+
+# Python (motor de la skill de diseño)
+__pycache__/
+*.pyc
+*.pyo
+
+# Skills de diseño (herramienta de terceros ~8MB, re-clonable; el design system
+# generado sí se versiona en design-system/). Quitar esta línea si el equipo
+# quiere versionar la herramienta completa.
+.claude/skills/

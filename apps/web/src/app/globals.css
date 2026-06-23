@@ -1,0 +1,69 @@
+@import "tailwindcss";
+
+/*
+  Design tokens de Click Viajes (fuente: design-system/click-viajes/MASTER.md).
+  Paleta Travel/Tourism: azul cielo + naranja aventura, estilo "Aurora UI".
+  Las fuentes (Calistoga / Inter / JetBrains Mono) llegan por next/font como
+  variables CSS y se mapean aquí a los tokens de Tailwind.
+*/
+@theme {
+  /* Colores semánticos */
+  --color-primary: #0ea5e9;
+  --color-primary-fg: #0f172a;
+  --color-secondary: #38bdf8;
+  --color-accent: #ea580c;
+  --color-accent-hover: #c2410c;
+  --color-background: #f0f9ff;
+  --color-surface: #ffffff;
+  --color-foreground: #0c4a6e;
+  --color-muted: #e8f2f8;
+  --color-muted-fg: #5b7c91;
+  --color-line: #bae6fd;
+  --color-destructive: #dc2626;
+  --color-success: #16a34a;
+  --color-ring: #0ea5e9;
+
+  /* Tipografía */
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-calistoga), Georgia, serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, monospace;
+
+  /* Sombras (escala del MASTER) */
+  --shadow-sm: 0 1px 2px rgba(12, 74, 110, 0.06);
+  --shadow-md: 0 4px 12px rgba(12, 74, 110, 0.08);
+  --shadow-lg: 0 12px 28px rgba(12, 74, 110, 0.12);
+  --shadow-xl: 0 24px 48px rgba(12, 74, 110, 0.16);
+
+  /* Radios */
+  --radius-btn: 0.5rem;
+  --radius-card: 0.75rem;
+  --radius-modal: 1rem;
+}
+
+@layer base {
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Respeta usuarios con reduced-motion (anti-patrón evitado del MASTER). */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+/* Fondo "Aurora": gradientes suaves y luminosos para pantallas de marca (login). */
+.aurora-bg {
+  background:
+    radial-gradient(60% 60% at 15% 20%, rgba(56, 189, 248, 0.45) 0%, rgba(56, 189, 248, 0) 60%),
+    radial-gradient(50% 50% at 85% 15%, rgba(14, 165, 233, 0.40) 0%, rgba(14, 165, 233, 0) 55%),
+    radial-gradient(55% 55% at 75% 85%, rgba(234, 88, 12, 0.28) 0%, rgba(234, 88, 12, 0) 60%),
+    linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 100%);
+}
