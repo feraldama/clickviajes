@@ -7,10 +7,10 @@ import {
   LayoutDashboard,
   Users,
   MapPin,
+  Package,
   Plane,
-  FileText,
-  CalendarDays,
-  Wallet,
+  Truck,
+  Coins,
   Building2,
   LogOut,
   Menu,
@@ -27,15 +27,15 @@ interface NavItem {
   roles?: string[];
 }
 
-// Las rutas marcadas como "próximamente" se habilitan en fases siguientes.
+// Se irán sumando módulos (Cotizaciones, Reservas, Pagos) en próximas fases.
 const NAV: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/clientes", label: "Clientes", icon: Users },
   { href: "/destinos", label: "Destinos", icon: MapPin },
+  { href: "/paquetes", label: "Paquetes", icon: Package },
   { href: "/viajes", label: "Viajes", icon: Plane },
-  { href: "/cotizaciones", label: "Cotizaciones", icon: FileText },
-  { href: "/reservas", label: "Reservas", icon: CalendarDays },
-  { href: "/pagos", label: "Pagos", icon: Wallet },
+  { href: "/proveedores", label: "Proveedores", icon: Truck },
+  { href: "/tipos-cambio", label: "Tipos de cambio", icon: Coins, roles: ["AGENCY_ADMIN", "SUPER_ADMIN"] },
   { href: "/agencias", label: "Agencias", icon: Building2, roles: ["SUPER_ADMIN"] },
 ];
 
