@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { TrendingUp, Wallet, Plane, Users, Gauge } from "lucide-react";
+import { TrendingUp, Wallet, Plane, Users, Gauge, FileWarning } from "lucide-react";
 import { formatMoney, type Currency } from "@clickviajes/shared";
 import { useAuth } from "@/lib/auth";
 import { useDashboard } from "@/lib/hooks/useDashboard";
@@ -37,12 +37,13 @@ export default function DashboardPage() {
           )}
 
           {/* KPIs */}
-          <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+          <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             <Kpi label="Ingresos (6 meses)" value={formatMoney(data.revenue, cur)} icon={TrendingUp} />
             <Kpi label="Por cobrar" value={formatMoney(data.receivable, cur)} icon={Wallet} tone={data.receivable > 0 ? "danger" : "success"} />
             <Kpi label="Reservas activas" value={String(data.activeBookings)} icon={Plane} />
             <Kpi label="Clientes" value={String(data.customers)} icon={Users} />
             <Kpi label="Ocupación de cupos" value={`${data.occupancy.pct}%`} hint={`${data.occupancy.booked}/${data.occupancy.capacity} plazas`} icon={Gauge} />
+            <Kpi label="Documentos por vencer (30 días)" value={String(data.expiringDocuments)} hint="Pasaportes/visas próximos a vencer" icon={FileWarning} tone={data.expiringDocuments > 0 ? "danger" : undefined} />
           </section>
 
           {/* Ingresos por mes */}

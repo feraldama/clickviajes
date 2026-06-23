@@ -20,7 +20,13 @@ export async function getDashboard(from?: Date, to?: Date): Promise<DashboardDat
   const conv = await buildConverter();
   let incomplete = false;
 
-  const [customers, bookings, payments, trips, users] = await Promise.all([
+  // Documentos de clientes que vencen dentro de los próximos 30 días.
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const in30Days = new Date(today);
+  in30Days.setDate(in30Days.getDate() + 30);
+
+  const [customers, bookings, payments, trips, users, expiringDocuments] = await Promise.all([
     prisma.customer.count(),
     prisma.booking.findMany({
       where: { status: { not: "CANCELLED" } },
@@ -29,6 +35,7 @@ export async function getDashboard(from?: Date, to?: Date): Promise<DashboardDat
     prisma.payment.findMany({ select: { amount: true, currency: true, paidAt: true, bookingId: true } }),
     prisma.trip.findMany({ select: { id: true, name: true, capacity: true, bookedSeats: true, status: true } }),
     prismaBase.user.findMany({ where: { tenantId }, select: { id: true, fullName: true } }),
+    prisma.customerDocument.count({ where: { expiryDate: { gte: today, lte: in30Days } } }),
   ]);
 
   const activeIds = new Set(bookings.map((b) => b.id));
@@ -117,6 +124,7 @@ export async function getDashboard(from?: Date, to?: Date): Promise<DashboardDat
     receivable: receivable.toNumber(),
     activeBookings: bookings.length,
     customers,
+    expiringDocuments,
     occupancy: { booked: bookedSeats, capacity, pct: capacity > 0 ? Math.round((bookedSeats / capacity) * 100) : 0 },
     topTrips,
     sellers,

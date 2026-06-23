@@ -14,6 +14,7 @@ export interface DashboardData {
   receivable: number; // saldo por cobrar de reservas activas
   activeBookings: number;
   customers: number;
+  expiringDocuments: number; // documentos de clientes que vencen en los próximos 30 días
   occupancy: { booked: number; capacity: number; pct: number };
   topTrips: Array<{ id: string; name: string; pax: number; bookings: number }>;
   sellers: Array<{ id: string; name: string; sales: number; commission: number; bookings: number }>;

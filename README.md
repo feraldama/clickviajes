@@ -57,8 +57,21 @@ pnpm dev
 | `pnpm db:migrate` | Aplica migraciones Prisma |
 | `pnpm db:seed` | Carga datos de ejemplo |
 | `pnpm db:studio` | Abre Prisma Studio |
-| `pnpm test` | Tests (incluye los del RUC) |
+| `pnpm test` | Tests: unitarios (RUC) + integración de la API |
 | `pnpm typecheck` | Chequeo de tipos en todo el monorepo |
+
+## Tests
+
+- **Unitarios** (`packages/shared`): cálculo del RUC (módulo 11).
+- **Integración** (`apps/api`): aislamiento por tenant, anti-sobreventa de cupos, margen multi-moneda, pagos/estado de cuenta y capa SaaS (límite de usuarios, login suspendido). Corren contra una BD de test separada.
+
+Requisito único (una vez): crear la base de test. Las migraciones se aplican solas al correr los tests.
+
+```bash
+# crear la BD de test (usuario/clave de tu Postgres)
+createdb -U postgres clickviajes_test   # o: psql -U postgres -c "CREATE DATABASE clickviajes_test"
+pnpm test
+```
 
 ## Multi-tenant
 

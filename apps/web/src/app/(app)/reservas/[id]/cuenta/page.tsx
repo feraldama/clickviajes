@@ -2,7 +2,7 @@
 
 import { use, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Plus, Trash2, Receipt } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Receipt, Printer } from "lucide-react";
 import { formatFecha, formatMoney, fechaDesdeInput, fechaInputValue, type Currency, type PaymentMethod } from "@clickviajes/shared";
 // Las fechas se pasan como Date a las mutaciones; JSON las serializa a ISO y el backend las coacciona.
 import { PageHeader } from "@/components/PageHeader";
@@ -187,8 +187,11 @@ export default function CuentaPage({ params }: { params: Promise<{ id: string }>
                     <td className="px-3 py-2 text-muted-fg">{formatFecha(p.paidAt)}</td>
                     <td className="px-3 py-2 text-muted-fg">{PAYMENT_METHOD_LABELS[p.method as PaymentMethod]}</td>
                     <td className="px-3 py-2 font-mono text-foreground">{formatMoney(p.amount, p.currency as Currency)}</td>
-                    <td className="px-3 py-2 text-right">
-                      <button onClick={() => setToDelete(p.id)} className="grid h-8 w-8 cursor-pointer place-items-center rounded-btn text-muted-fg hover:bg-destructive/10 hover:text-destructive" aria-label="Eliminar pago"><Trash2 className="h-4 w-4" /></button>
+                    <td className="px-3 py-2">
+                      <div className="flex items-center justify-end gap-1">
+                        <Link href={`/recibo/${p.id}`} target="_blank" title="Imprimir recibo" className="grid h-8 w-8 cursor-pointer place-items-center rounded-btn text-muted-fg hover:bg-primary/10 hover:text-primary" aria-label="Imprimir recibo"><Printer className="h-4 w-4" /></Link>
+                        <button onClick={() => setToDelete(p.id)} className="grid h-8 w-8 cursor-pointer place-items-center rounded-btn text-muted-fg hover:bg-destructive/10 hover:text-destructive" aria-label="Eliminar pago"><Trash2 className="h-4 w-4" /></button>
+                      </div>
                     </td>
                   </tr>
                 ))}

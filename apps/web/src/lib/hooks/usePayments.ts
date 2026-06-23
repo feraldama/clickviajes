@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { AccountStatement, InstallmentPlanInput, PaymentInput } from "@clickviajes/shared";
+import type { AccountStatement, InstallmentPlanInput, PaymentInput, ReceiptData } from "@clickviajes/shared";
 import { apiFetch, ApiError } from "@/lib/api";
 import { toast } from "@/components/ui/Toast";
 
@@ -10,6 +10,14 @@ export function useAccount(bookingId: string | undefined) {
     queryKey: ["account", bookingId],
     queryFn: () => apiFetch<AccountStatement>(`/bookings/${bookingId}/account`),
     enabled: !!bookingId,
+  });
+}
+
+export function useReceipt(paymentId: string | undefined) {
+  return useQuery({
+    queryKey: ["receipt", paymentId],
+    queryFn: () => apiFetch<ReceiptData>(`/payments/${paymentId}/receipt`),
+    enabled: !!paymentId,
   });
 }
 

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Plus, Search, Pencil, Trash2, Package as PackageIcon, MapPin } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, Package as PackageIcon, MapPin, Plane } from "lucide-react";
 import { formatMoney } from "@clickviajes/shared";
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/Button";
@@ -82,7 +82,10 @@ export default function PaquetesPage() {
                 </span>
                 <span className="rounded-full bg-muted px-2 py-0.5 text-muted-fg">{p.itinerary.length} días</span>
               </div>
-              <div className="mt-4 flex justify-end gap-1 border-t border-line/60 pt-3">
+              <div className="mt-4 flex items-center justify-end gap-1 border-t border-line/60 pt-3">
+                <Link href={`/viajes/nuevo?packageId=${p.id}`} title="Crear salida desde este paquete" className="mr-auto inline-flex cursor-pointer items-center gap-1.5 rounded-btn px-2 py-1 text-sm text-primary hover:bg-primary/10" aria-label="Crear salida">
+                  <Plane className="h-4 w-4" /> Crear salida
+                </Link>
                 <Link href={`/paquetes/${p.id}`} className="grid h-8 w-8 cursor-pointer place-items-center rounded-btn text-muted-fg hover:bg-primary/10 hover:text-primary" aria-label="Editar">
                   <Pencil className="h-4 w-4" />
                 </Link>

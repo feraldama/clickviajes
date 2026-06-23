@@ -13,8 +13,8 @@ const withDocuments = { documents: true } satisfies Prisma.CustomerInclude;
  * (módulo 11). Si el RUC viene explícito, se respeta (casos jurídicos, etc.).
  */
 function resolverRuc(input: CustomerInput): string | null {
-  const ruc = input.ruc?.trim();
-  if (ruc) return ruc;
+  // Jurídica: el RUC se ingresa directo. Física: se deriva del CI (módulo 11).
+  if (input.personType === "JURIDICAL") return input.ruc?.trim() || null;
   const ci = input.ci?.trim();
   return ci ? calcularRuc(ci) : null;
 }
@@ -70,8 +70,9 @@ export async function createCustomer(input: CustomerInput) {
   return prisma.customer.create({
     data: {
       tenantId,
+      personType: input.personType,
       firstName: input.firstName,
-      lastName: input.lastName,
+      lastName: input.lastName?.trim() || "",
       ci: input.ci?.trim() || null,
       ruc: resolverRuc(input),
       email: normalizarEmail(input.email),
@@ -107,8 +108,9 @@ export async function updateCustomer(id: string, input: CustomerInput) {
     return tx.customer.update({
       where: { id },
       data: {
+        personType: input.personType,
         firstName: input.firstName,
-        lastName: input.lastName,
+        lastName: input.lastName?.trim() || "",
         ci: input.ci?.trim() || null,
         ruc: resolverRuc(input),
         email: normalizarEmail(input.email),

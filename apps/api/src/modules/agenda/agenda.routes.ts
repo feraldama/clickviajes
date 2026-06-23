@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { agendaQuerySchema, type AgendaQuery } from "@clickviajes/shared";
-import { requireAuth } from "../../middlewares/auth.js";
+import { requireAuth, requireTenant } from "../../middlewares/auth.js";
 import { validate } from "../../middlewares/validate.js";
 import { asyncHandler } from "../../utils/async-handler.js";
 import { sendOk } from "../../utils/api-response.js";
@@ -8,7 +8,7 @@ import { getAgenda } from "./agenda.service.js";
 
 export const agendaRouter = Router();
 
-agendaRouter.use(requireAuth);
+agendaRouter.use(requireAuth, requireTenant);
 
 agendaRouter.get(
   "/",

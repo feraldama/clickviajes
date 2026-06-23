@@ -34,33 +34,47 @@ interface SupRow {
   costCurrency: Currency;
 }
 
+export interface TripPrefill {
+  name?: string;
+  packageId?: string;
+  saleCurrency?: Currency;
+  salePrice?: string;
+  destinationIds?: string[];
+  itinerary?: { dayNumber: number; title: string; description: string | null }[];
+}
+
 interface Props {
   initial?: TripRecord;
+  prefill?: TripPrefill;
   submitting: boolean;
   onSubmit: (input: TripInput) => Promise<void>;
 }
 
-export function TripForm({ initial, submitting, onSubmit }: Props) {
+export function TripForm({ initial, prefill, submitting, onSubmit }: Props) {
   const router = useRouter();
   const suppliers = useSuppliers({ pageSize: 100 });
   const packages = usePackages({ pageSize: 100 });
 
-  const [name, setName] = useState(initial?.name ?? "");
-  const [packageId, setPackageId] = useState(initial?.packageId ?? "");
+  const [name, setName] = useState(initial?.name ?? prefill?.name ?? "");
+  const [packageId, setPackageId] = useState(initial?.packageId ?? prefill?.packageId ?? "");
   const [startDate, setStartDate] = useState(fechaInputValue(initial?.startDate));
   const [endDate, setEndDate] = useState(fechaInputValue(initial?.endDate));
   const [capacity, setCapacity] = useState(initial ? String(initial.capacity) : "");
   const [status, setStatus] = useState<TripStatus>(initial?.status ?? "SCHEDULED");
-  const [salePrice, setSalePrice] = useState(initial ? String(Number(initial.salePrice)) : "");
-  const [saleCurrency, setSaleCurrency] = useState<Currency>(initial?.saleCurrency ?? "PYG");
-  const [destinationIds, setDestinationIds] = useState<string[]>(initial?.destinations.map((d) => d.destination.id) ?? []);
+  const [salePrice, setSalePrice] = useState(initial ? String(Number(initial.salePrice)) : (prefill?.salePrice ?? ""));
+  const [saleCurrency, setSaleCurrency] = useState<Currency>(initial?.saleCurrency ?? prefill?.saleCurrency ?? "PYG");
+  const [destinationIds, setDestinationIds] = useState<string[]>(
+    initial?.destinations.map((d) => d.destination.id) ?? prefill?.destinationIds ?? [],
+  );
   const [itinerary, setItinerary] = useState<ItinRow[]>(
     initial?.itinerary.map((i) => ({
       dayNumber: String(i.dayNumber),
       date: fechaInputValue(i.date),
       title: i.title,
       description: i.description ?? "",
-    })) ?? [],
+    })) ??
+      prefill?.itinerary?.map((i) => ({ dayNumber: String(i.dayNumber), date: "", title: i.title, description: i.description ?? "" })) ??
+      [],
   );
   const [sups, setSups] = useState<SupRow[]>(
     initial?.suppliers.map((s) => ({

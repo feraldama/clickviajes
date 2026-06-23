@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { CustomerInput, DocumentType, Paginated } from "@clickviajes/shared";
+import type { CustomerInput, DocumentType, PersonType, Paginated } from "@clickviajes/shared";
 import { apiFetch, ApiError } from "@/lib/api";
 import { toast } from "@/components/ui/Toast";
 
@@ -16,6 +16,7 @@ export interface CustomerDocumentRecord {
 
 export interface CustomerRecord {
   id: string;
+  personType: PersonType;
   firstName: string;
   lastName: string;
   ci: string | null;

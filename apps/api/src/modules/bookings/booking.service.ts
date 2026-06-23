@@ -101,10 +101,13 @@ export async function createBooking(input: BookingInput) {
       throw AppError.conflict(`No hay cupo suficiente (disponibles: ${trip.capacity - trip.bookedSeats})`);
     }
 
-    // Si proviene de una cotización, marcarla como aceptada.
+    // Si proviene de una cotización, validarla y marcarla como aceptada.
     if (input.quoteId) {
       const q = await tx.quote.findFirst({ where: { id: input.quoteId, tenantId } });
       if (!q) throw AppError.badRequest("La cotización no pertenece a la agencia");
+      if (q.status === "REJECTED") throw AppError.conflict("La cotización fue rechazada");
+      const vencida = q.status === "EXPIRED" || (q.validUntil != null && q.validUntil < new Date());
+      if (vencida) throw AppError.conflict("La cotización está vencida; genera una nueva");
       await tx.quote.update({ where: { id: input.quoteId }, data: { status: "ACCEPTED" } });
     }
 

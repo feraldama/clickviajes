@@ -12,6 +12,7 @@ import { MoneyInput } from "@/components/ui/MoneyInput";
 import { Select } from "@/components/ui/Select";
 import { CustomerSelect, TripSelect } from "@/components/pickers";
 import type { BookingRecord } from "@/lib/hooks/useBookings";
+import { useTrips } from "@/lib/hooks/useTrips";
 
 const DOC_LABELS: Record<DocumentType, string> = {
   PASSPORT: "Pasaporte",
@@ -68,6 +69,29 @@ export function BookingForm({ initial, prefill, submitting, onSubmit }: Props) {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState("");
 
+  // Total sugerido = precio del viaje × pax. No se pisa si el usuario lo editó
+  // o si la reserva proviene de una cotización (con su propio total).
+  const trips = useTrips({ pageSize: 100 });
+  const [totalTouched, setTotalTouched] = useState(!!initial || !!prefill?.totalAmount);
+
+  function recalcTotal(tId: string, pax: string) {
+    if (totalTouched) return;
+    const trip = trips.data?.items.find((t) => t.id === tId);
+    const n = Number(pax);
+    if (trip && n > 0) {
+      setTotalAmount(String(Number(trip.salePrice) * n));
+      setCurrency(trip.saleCurrency);
+    }
+  }
+  function onTripChange(v: string) {
+    setTripId(v);
+    recalcTotal(v, paxCount);
+  }
+  function onPaxChange(v: string) {
+    setPaxCount(v);
+    recalcTotal(tripId, v);
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setErrors({});
@@ -114,11 +138,11 @@ export function BookingForm({ initial, prefill, submitting, onSubmit }: Props) {
         <h2 className="mb-4 font-display text-lg text-foreground">Datos de la reserva</h2>
         <div className="grid gap-4 sm:grid-cols-2">
           <CustomerSelect label="Cliente titular" value={customerId} onChange={setCustomerId} error={errors.customerId} />
-          <TripSelect value={tripId} onChange={setTripId} error={errors.tripId} />
-          <Input label="Cantidad de pasajeros" value={paxCount} onChange={(e) => setPaxCount(e.target.value)} inputMode="numeric" error={errors.paxCount} />
+          <TripSelect value={tripId} onChange={onTripChange} error={errors.tripId} />
+          <Input label="Cantidad de pasajeros" value={paxCount} onChange={(e) => onPaxChange(e.target.value)} inputMode="numeric" error={errors.paxCount} />
           <div className="grid grid-cols-2 gap-3">
-            <MoneyInput label="Monto total" value={totalAmount} onChange={setTotalAmount} currency={currency} placeholder="0" />
-            <Select label="Moneda" value={currency} onChange={(e) => setCurrency(e.target.value as Currency)} options={CURRENCY_OPTIONS} />
+            <MoneyInput label="Monto total" value={totalAmount} onChange={(v) => { setTotalTouched(true); setTotalAmount(v); }} currency={currency} placeholder="0" />
+            <Select label="Moneda" value={currency} onChange={(e) => { setTotalTouched(true); setCurrency(e.target.value as Currency); }} options={CURRENCY_OPTIONS} />
           </div>
           <Input label="Comisión % (opcional)" value={commissionRate} onChange={(e) => setCommissionRate(e.target.value)} inputMode="decimal" placeholder="Usa la del vendedor" />
         </div>

@@ -49,10 +49,18 @@ export const prisma = prismaBase.$extends({
   query: {
     $allModels: {
       async $allOperations({ model, operation, args, query }) {
-        const tenantId = tenantStore.getStore()?.tenantId;
-
-        if (!tenantId || !model || !TENANT_MODELS.has(model)) {
+        // Modelos de plataforma (sin tenantId propio): pasan directo.
+        if (!model || !TENANT_MODELS.has(model)) {
           return query(args);
+        }
+
+        const tenantId = tenantStore.getStore()?.tenantId;
+        if (!tenantId) {
+          // Defensa en profundidad: nunca tocar datos de un tenant sin contexto.
+          // Las operaciones de plataforma deben usar `prismaBase` (sin extensión).
+          throw new Error(
+            `Operación '${operation}' sobre '${model}' sin contexto de agencia. Usá 'prismaBase' para operaciones de plataforma.`,
+          );
         }
 
         const a = (args ?? {}) as Record<string, unknown>;

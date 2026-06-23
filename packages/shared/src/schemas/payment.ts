@@ -25,6 +25,20 @@ export const paymentSchema = z.object({
 });
 export type PaymentInput = z.infer<typeof paymentSchema>;
 
+/** Datos para imprimir el recibo de un pago. */
+export interface ReceiptData {
+  agencyName: string;
+  receiptNumber: string | null;
+  paidAt: string;
+  amount: string;
+  currency: string;
+  method: string;
+  customerName: string;
+  customerRuc: string | null;
+  tripName: string;
+  bookingId: string;
+}
+
 /** Estado de cuenta devuelto por el backend. */
 export interface AccountStatement {
   bookingId: string;

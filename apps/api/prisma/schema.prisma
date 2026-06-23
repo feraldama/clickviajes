@@ -37,6 +37,11 @@ enum DocumentType {
   OTHER
 }
 
+enum PersonType {
+  PHYSICAL
+  JURIDICAL
+}
+
 enum SupplierType {
   HOTEL
   TRANSPORT
@@ -162,11 +167,12 @@ model ExchangeRate {
 
 // ───────────── CRM ─────────────
 model Customer {
-  id        String    @id @default(cuid())
-  tenantId  String
-  firstName String
-  lastName  String
-  ci        String?
+  id         String     @id @default(cuid())
+  tenantId   String
+  personType PersonType @default(PHYSICAL)
+  firstName  String
+  lastName   String     @default("")
+  ci         String?
   ruc       String? // autocompletado desde CI, editable
   email     String?
   phone     String?
@@ -182,8 +188,8 @@ model Customer {
   bookings   Booking[]
   passengers Passenger[]
 
+  @@unique([tenantId, ci])
   @@index([tenantId])
-  @@index([tenantId, ci])
 }
 
 model CustomerDocument {

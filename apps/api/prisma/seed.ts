@@ -1,4 +1,5 @@
 import bcrypt from "bcryptjs";
+import { calcularRuc } from "@clickviajes/shared";
 import { prismaBase } from "../src/lib/prisma.js";
 import { env } from "../src/config/env.js";
 
@@ -76,6 +77,90 @@ async function main() {
       { tenantId: tenant.id, fromCurrency: "ARS", toCurrency: "PYG", rate: "7.500000", date: hoy },
     ],
   });
+
+  // ───── Datos de muestra de la agencia demo (solo si está vacía) ─────
+  const yaTieneDatos = (await prismaBase.customer.count({ where: { tenantId: tenant.id } })) > 0;
+  if (!yaTieneDatos) {
+    const iguazu = await prismaBase.destination.create({
+      data: {
+        tenantId: tenant.id,
+        name: "Cataratas del Iguazú",
+        country: "Argentina",
+        city: "Puerto Iguazú",
+        description: "Una de las maravillas naturales del mundo, en la triple frontera.",
+        recommendedSeason: "Marzo a noviembre",
+        photos: [],
+        attractions: {
+          create: [
+            { tenantId: tenant.id, name: "Garganta del Diablo", description: "El salto más imponente." },
+            { tenantId: tenant.id, name: "Paseo Superior", description: "Vista panorámica de las cataratas." },
+          ],
+        },
+      },
+    });
+    await prismaBase.destination.create({
+      data: {
+        tenantId: tenant.id,
+        name: "Río de Janeiro",
+        country: "Brasil",
+        city: "Río de Janeiro",
+        description: "Playas, Cristo Redentor y Pan de Azúcar.",
+        recommendedSeason: "Todo el año",
+        photos: [],
+      },
+    });
+
+    const hotel = await prismaBase.supplier.create({
+      data: { tenantId: tenant.id, name: "Hotel Cataratas", type: "HOTEL", email: "reservas@hotelcataratas.com" },
+    });
+
+    await prismaBase.package.create({
+      data: {
+        tenantId: tenant.id,
+        name: "Iguazú Clásico 3 días",
+        description: "Lado argentino + lado brasileño con guía.",
+        basePrice: "1200.0000",
+        currency: "USD",
+        destinations: { create: [{ destinationId: iguazu.id }] },
+        itinerary: {
+          create: [
+            { dayNumber: 1, title: "Llegada y city tour", description: "Recepción y traslado al hotel." },
+            { dayNumber: 2, title: "Cataratas lado argentino" },
+            { dayNumber: 3, title: "Cataratas lado brasileño y regreso" },
+          ],
+        },
+      },
+    });
+
+    const start = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 10);
+    const end = new Date(start);
+    end.setDate(end.getDate() + 3);
+    await prismaBase.trip.create({
+      data: {
+        tenantId: tenant.id,
+        name: "Salida Iguazú — próximo mes",
+        startDate: start,
+        endDate: end,
+        capacity: 20,
+        salePrice: "2500000.0000",
+        saleCurrency: "PYG",
+        status: "SCHEDULED",
+        destinations: { create: [{ destinationId: iguazu.id }] },
+        suppliers: {
+          create: [{ tenantId: tenant.id, supplierId: hotel.id, description: "Alojamiento 3 noches", cost: "150.0000", costCurrency: "USD" }],
+        },
+      },
+    });
+
+    for (const [firstName, lastName, ci] of [
+      ["María", "González", "1234567"],
+      ["Carlos", "Benítez", "4185050"],
+    ] as const) {
+      await prismaBase.customer.create({
+        data: { tenantId: tenant.id, firstName, lastName, ci, ruc: calcularRuc(ci) },
+      });
+    }
+  }
 
   console.log("✅ Seed completado:");
   console.log(`   Super-admin: ${superAdmin.email} / superadmin123`);

@@ -21,7 +21,16 @@ async function assertTripOwned(tripId: string | null | undefined) {
   if (t === 0) throw AppError.badRequest("El viaje no pertenece a la agencia");
 }
 
+/** Marca como vencidas las cotizaciones DRAFT/SENT cuya validez ya pasó. */
+async function expireStaleQuotes() {
+  await prisma.quote.updateMany({
+    where: { status: { in: ["DRAFT", "SENT"] }, validUntil: { lt: new Date() } },
+    data: { status: "EXPIRED" },
+  });
+}
+
 export async function listQuotes(query: QuoteListQuery): Promise<Paginated<unknown>> {
+  await expireStaleQuotes();
   const { search, status, page, pageSize, sortBy, sortDir } = query;
   const where: Prisma.QuoteWhereInput = {
     ...(status ? { status } : {}),
@@ -45,6 +54,7 @@ export async function listQuotes(query: QuoteListQuery): Promise<Paginated<unkno
 }
 
 export async function getQuote(id: string) {
+  await expireStaleQuotes();
   const quote = await prisma.quote.findFirst({ where: { id }, include });
   if (!quote) throw AppError.notFound("Cotización no encontrada");
   return quote;

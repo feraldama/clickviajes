@@ -41,5 +41,8 @@ export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
 export const DOCUMENT_TYPES = ["PASSPORT", "VISA", "ID_CARD", "OTHER"] as const;
 export type DocumentType = (typeof DOCUMENT_TYPES)[number];
 
+export const PERSON_TYPES = ["PHYSICAL", "JURIDICAL"] as const;
+export type PersonType = (typeof PERSON_TYPES)[number];
+
 export const SUPPLIER_TYPES = ["HOTEL", "TRANSPORT", "GUIDE", "INSURANCE", "OTHER"] as const;
 export type SupplierType = (typeof SUPPLIER_TYPES)[number];

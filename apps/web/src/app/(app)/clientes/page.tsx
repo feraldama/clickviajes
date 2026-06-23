@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Plus, Pencil, Trash2, Users } from "lucide-react";
+import { Plus, Pencil, Trash2, Users, AlertTriangle } from "lucide-react";
 import { formatFecha } from "@clickviajes/shared";
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/Button";
@@ -29,7 +29,12 @@ export default function ClientesPage() {
       header: "Nombre",
       render: (c) => (
         <div>
-          <div className="font-medium text-foreground">{c.firstName}</div>
+          <div className="flex items-center gap-2">
+            <span className="font-medium text-foreground">{c.firstName}</span>
+            {c.personType === "JURIDICAL" && (
+              <span className="rounded-full bg-secondary/15 px-2 py-0.5 text-[10px] uppercase tracking-wide text-foreground">Jurídica</span>
+            )}
+          </div>
           {c.birthDate && <div className="text-xs text-muted-fg">Nac. {formatFecha(c.birthDate)}</div>}
         </div>
       ),
@@ -37,7 +42,7 @@ export default function ClientesPage() {
     {
       key: "lastName",
       header: "Apellido",
-      render: (c) => <span className="font-medium text-foreground">{c.lastName}</span>,
+      render: (c) => <span className="font-medium text-foreground">{c.lastName || "—"}</span>,
     },
     {
       key: "ci",
@@ -61,9 +66,15 @@ export default function ClientesPage() {
     },
     {
       header: "Docs",
-      render: (c) => (
-        <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">{c.documents.length}</span>
-      ),
+      render: (c) => {
+        const soon = c.documents.some((d) => d.expiryDate && new Date(d.expiryDate).getTime() <= Date.now() + 30 * 864e5);
+        return (
+          <span className="inline-flex items-center gap-1">
+            <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">{c.documents.length}</span>
+            {soon && <AlertTriangle className="h-4 w-4 text-amber-500" aria-label="Documento por vencer" />}
+          </span>
+        );
+      },
     },
     {
       header: "Acciones",

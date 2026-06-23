@@ -1,4 +1,4 @@
-import type { AccountStatement, Currency, InstallmentPlanInput, PaymentInput } from "@clickviajes/shared";
+import type { AccountStatement, Currency, InstallmentPlanInput, PaymentInput, ReceiptData } from "@clickviajes/shared";
 import { Prisma, type InstallmentStatus } from "@prisma/client";
 import { prisma, prismaBase } from "../../lib/prisma.js";
 import { currentTenantId, getTenantContext } from "../../lib/tenant-context.js";
@@ -168,6 +168,37 @@ export async function createPayment(bookingId: string, input: PaymentInput) {
   });
   await recomputeInstallmentStatuses(bookingId);
   return payment;
+}
+
+export async function getReceipt(paymentId: string): Promise<ReceiptData> {
+  const tenantId = currentTenantId();
+  if (!tenantId) throw AppError.unauthorized("Sin agencia en contexto");
+  const payment = await prisma.payment.findFirst({
+    where: { id: paymentId },
+    include: {
+      booking: {
+        include: {
+          customer: { select: { firstName: true, lastName: true, ruc: true } },
+          trip: { select: { name: true } },
+        },
+      },
+    },
+  });
+  if (!payment) throw AppError.notFound("Pago no encontrado");
+  const tenant = await prismaBase.tenant.findUnique({ where: { id: tenantId } });
+  const c = payment.booking.customer;
+  return {
+    agencyName: tenant?.name ?? "",
+    receiptNumber: payment.receiptNumber,
+    paidAt: payment.paidAt.toISOString(),
+    amount: payment.amount.toString(),
+    currency: payment.currency,
+    method: payment.method,
+    customerName: `${c.firstName} ${c.lastName}`.trim(),
+    customerRuc: c.ruc,
+    tripName: payment.booking.trip.name,
+    bookingId: payment.bookingId,
+  };
 }
 
 export async function deletePayment(id: string) {
