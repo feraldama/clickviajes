@@ -25,7 +25,7 @@ function normalizarEmail(email: CustomerInput["email"]): string | null {
 }
 
 export async function listCustomers(query: CustomerListQuery): Promise<Paginated<unknown>> {
-  const { search, page, pageSize } = query;
+  const { search, page, pageSize, sortBy, sortDir } = query;
 
   const where: Prisma.CustomerWhereInput = search
     ? {
@@ -39,11 +39,13 @@ export async function listCustomers(query: CustomerListQuery): Promise<Paginated
       }
     : {};
 
+  const orderBy = { [sortBy]: sortDir } as Prisma.CustomerOrderByWithRelationInput;
+
   const [items, total] = await Promise.all([
     prisma.customer.findMany({
       where,
       include: withDocuments,
-      orderBy: { createdAt: "desc" },
+      orderBy,
       skip: (page - 1) * pageSize,
       take: pageSize,
     }),

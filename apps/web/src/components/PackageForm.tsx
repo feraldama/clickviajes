@@ -8,6 +8,7 @@ import { ApiError } from "@/lib/api";
 import { CURRENCY_OPTIONS } from "@/lib/options";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { MoneyInput } from "@/components/ui/MoneyInput";
 import { Select } from "@/components/ui/Select";
 import { Textarea } from "@/components/ui/Textarea";
 import { DestinationPicker } from "@/components/DestinationPicker";
@@ -86,7 +87,7 @@ export function PackageForm({ initial, submitting, onSubmit }: Props) {
         <div className="grid gap-4 sm:grid-cols-2">
           <Input label="Nombre *" value={name} onChange={(e) => setName(e.target.value)} error={errors.name} />
           <div className="grid grid-cols-2 gap-3">
-            <Input label="Precio base" value={basePrice} onChange={(e) => setBasePrice(e.target.value)} inputMode="decimal" placeholder="0" />
+            <MoneyInput label="Precio base" value={basePrice} onChange={setBasePrice} currency={currency} placeholder="0" />
             <Select label="Moneda" value={currency} onChange={(e) => setCurrency(e.target.value as Currency)} options={CURRENCY_OPTIONS} />
           </div>
         </div>
@@ -104,7 +105,7 @@ export function PackageForm({ initial, submitting, onSubmit }: Props) {
       <section className="rounded-card border border-line bg-surface p-6 shadow-sm">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="font-display text-lg text-foreground">Itinerario</h2>
-          <Button type="button" variant="secondary" onClick={addDay} className="!px-3 !py-1.5 text-xs">
+          <Button type="button" variant="secondary" onClick={addDay} className="px-3! py-1.5! text-xs">
             <Plus className="h-4 w-4" /> Agregar día
           </Button>
         </div>

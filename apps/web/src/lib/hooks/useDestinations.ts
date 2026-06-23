@@ -2,7 +2,8 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { DestinationInput, Paginated } from "@clickviajes/shared";
-import { apiFetch } from "@/lib/api";
+import { apiFetch, ApiError } from "@/lib/api";
+import { toast } from "@/components/ui/Toast";
 
 export interface AttractionRecord {
   id: string;
@@ -56,7 +57,10 @@ export function useCreateDestination() {
   return useMutation({
     mutationFn: (input: DestinationInput) =>
       apiFetch<DestinationRecord>("/destinations", { method: "POST", body: input }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["destinations"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["destinations"] });
+      toast.success("Destino creado");
+    },
   });
 }
 
@@ -65,7 +69,10 @@ export function useUpdateDestination(id: string) {
   return useMutation({
     mutationFn: (input: DestinationInput) =>
       apiFetch<DestinationRecord>(`/destinations/${id}`, { method: "PUT", body: input }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["destinations"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["destinations"] });
+      toast.success("Destino actualizado");
+    },
   });
 }
 
@@ -73,6 +80,10 @@ export function useDeleteDestination() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => apiFetch(`/destinations/${id}`, { method: "DELETE" }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["destinations"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["destinations"] });
+      toast.success("Destino eliminado");
+    },
+    onError: (e) => toast.error(e instanceof ApiError ? e.message : "No se pudo eliminar"),
   });
 }

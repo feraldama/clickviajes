@@ -5,23 +5,20 @@
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
-const ACCESS_KEY = "cv_access_token";
-const REFRESH_KEY = "cv_refresh_token";
+// El access token vive solo en memoria (no en localStorage) para reducir la
+// superficie de XSS. El refresh token viaja en una cookie httpOnly que el JS
+// no puede leer; el navegador la envía sola gracias a credentials: "include".
+let accessToken: string | null = null;
 
 export const tokenStore = {
   get access() {
-    return typeof window !== "undefined" ? localStorage.getItem(ACCESS_KEY) : null;
+    return accessToken;
   },
-  get refresh() {
-    return typeof window !== "undefined" ? localStorage.getItem(REFRESH_KEY) : null;
-  },
-  set(access: string, refresh: string) {
-    localStorage.setItem(ACCESS_KEY, access);
-    localStorage.setItem(REFRESH_KEY, refresh);
+  set(token: string) {
+    accessToken = token;
   },
   clear() {
-    localStorage.removeItem(ACCESS_KEY);
-    localStorage.removeItem(REFRESH_KEY);
+    accessToken = null;
   },
 };
 
@@ -54,22 +51,32 @@ async function parse<T>(res: Response): Promise<T> {
   return json.data;
 }
 
-async function tryRefresh(): Promise<boolean> {
-  const refreshToken = tokenStore.refresh;
-  if (!refreshToken) return false;
+async function doRefresh(): Promise<boolean> {
   try {
     const res = await fetch(`${API_URL}/auth/refresh`, {
       method: "POST",
+      credentials: "include", // envía la cookie httpOnly del refresh token
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ refreshToken }),
     });
     if (!res.ok) return false;
-    const json = (await res.json()) as ApiSuccess<{ accessToken: string; refreshToken: string }>;
-    tokenStore.set(json.data.accessToken, json.data.refreshToken);
+    const json = (await res.json()) as ApiSuccess<{ accessToken: string }>;
+    tokenStore.set(json.data.accessToken);
     return true;
   } catch {
     return false;
   }
+}
+
+// Single-flight: si llegan varios 401 a la vez, comparten un único refresh
+// para no rotar el token en paralelo (lo que invalidaría las demás peticiones).
+let refreshInFlight: Promise<boolean> | null = null;
+function tryRefresh(): Promise<boolean> {
+  if (!refreshInFlight) {
+    refreshInFlight = doRefresh().finally(() => {
+      refreshInFlight = null;
+    });
+  }
+  return refreshInFlight;
 }
 
 interface RequestOptions {
@@ -88,6 +95,7 @@ export async function apiFetch<T>(path: string, opts: RequestOptions = {}): Prom
   const res = await fetch(`${API_URL}${path}`, {
     method,
     headers,
+    credentials: "include",
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
 

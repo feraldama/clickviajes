@@ -14,5 +14,7 @@ export const supplierListQuerySchema = z.object({
   search: z.string().optional(),
   page: z.coerce.number().int().positive().default(1),
   pageSize: z.coerce.number().int().positive().max(100).default(20),
+  sortBy: z.enum(["name", "type"]).default("name"),
+  sortDir: z.enum(["asc", "desc"]).default("asc"),
 });
 export type SupplierListQuery = z.infer<typeof supplierListQuerySchema>;

@@ -6,7 +6,7 @@ interface Option {
 }
 
 interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
-  label: string;
+  label?: string;
   options: Option[];
   error?: string;
 }
@@ -18,9 +18,11 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select
   const inputId = id ?? rest.name;
   return (
     <div className="flex flex-col gap-1.5">
-      <label htmlFor={inputId} className="text-sm font-medium text-foreground">
-        {label}
-      </label>
+      {label ? (
+        <label htmlFor={inputId} className="text-sm font-medium text-foreground">
+          {label}
+        </label>
+      ) : null}
       <select
         ref={ref}
         id={inputId}

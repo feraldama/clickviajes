@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { loginSchema } from "@clickviajes/shared";
@@ -119,6 +120,10 @@ export default function LoginPage() {
             <Button type="submit" loading={submitting} className="mt-2 w-full">
               Ingresar
             </Button>
+            <p className="text-center text-sm text-muted-fg">
+              ¿Tu agencia es nueva?{" "}
+              <Link href="/registro" className="text-primary hover:underline">Regístrala</Link>
+            </p>
           </form>
         </div>
       </section>

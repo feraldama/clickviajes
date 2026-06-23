@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import { Plus, Trash2, Coins } from "lucide-react";
-import { exchangeRateSchema, formatFecha, fechaIsoDesdeInput, parseFecha, type Currency } from "@clickviajes/shared";
+import { exchangeRateSchema, formatFecha, fechaInputValue, type Currency } from "@clickviajes/shared";
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { MoneyInput } from "@/components/ui/MoneyInput";
 import { Select } from "@/components/ui/Select";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { ApiError } from "@/lib/api";
@@ -26,21 +27,21 @@ export default function TiposCambioPage() {
   const [from, setFrom] = useState<Currency>("USD");
   const [to, setTo] = useState<Currency>("PYG");
   const [rate, setRate] = useState("");
-  const [date, setDate] = useState(formatFecha(new Date()));
+  const [date, setDate] = useState(fechaInputValue(new Date()));
   const [error, setError] = useState("");
 
   async function add(e: React.FormEvent) {
     e.preventDefault();
     setError("");
-    if (!parseFecha(date)) {
-      setError("Fecha inválida (dd/mm/aaaa)");
+    if (!date) {
+      setError("La fecha es obligatoria");
       return;
     }
     const parsed = exchangeRateSchema.safeParse({
       fromCurrency: from,
       toCurrency: to,
       rate,
-      date: fechaIsoDesdeInput(date),
+      date,
     });
     if (!parsed.success) {
       setError(parsed.error.issues[0]?.message ?? "Datos inválidos");
@@ -65,8 +66,8 @@ export default function TiposCambioPage() {
         <div className="grid items-end gap-3 sm:grid-cols-5">
           <Select label="De" value={from} onChange={(e) => setFrom(e.target.value as Currency)} options={CURRENCY_OPTIONS} />
           <Select label="A" value={to} onChange={(e) => setTo(e.target.value as Currency)} options={CURRENCY_OPTIONS} />
-          <Input label="Tasa" value={rate} onChange={(e) => setRate(e.target.value)} inputMode="decimal" placeholder="7600" />
-          <Input label="Fecha" value={date} onChange={(e) => setDate(e.target.value)} placeholder="dd/mm/aaaa" inputMode="numeric" />
+          <MoneyInput label="Tasa" value={rate} onChange={setRate} decimals={6} placeholder="7600" />
+          <Input label="Fecha" type="date" value={date} onChange={(e) => setDate(e.target.value)} max={fechaInputValue(new Date())} />
           <Button type="submit" loading={create.isPending}>
             <Plus className="h-4 w-4" /> Agregar
           </Button>

@@ -15,13 +15,14 @@ function clean(input: SupplierInput) {
 }
 
 export async function listSuppliers(query: SupplierListQuery): Promise<Paginated<unknown>> {
-  const { search, page, pageSize } = query;
+  const { search, page, pageSize, sortBy, sortDir } = query;
   const where: Prisma.SupplierWhereInput = search
     ? { name: { contains: search, mode: "insensitive" } }
     : {};
+  const orderBy = { [sortBy]: sortDir } as Prisma.SupplierOrderByWithRelationInput;
 
   const [items, total] = await Promise.all([
-    prisma.supplier.findMany({ where, orderBy: { name: "asc" }, skip: (page - 1) * pageSize, take: pageSize }),
+    prisma.supplier.findMany({ where, orderBy, skip: (page - 1) * pageSize, take: pageSize }),
     prisma.supplier.count({ where }),
   ]);
   return { items, total, page, pageSize, totalPages: Math.ceil(total / pageSize) || 1 };

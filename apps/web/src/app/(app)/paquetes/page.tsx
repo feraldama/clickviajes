@@ -8,11 +8,14 @@ import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { usePackages, useDeletePackage, type PackageRecord } from "@/lib/hooks/usePackages";
+import { useDebounce } from "@/lib/hooks/useDebounce";
+import { Pagination } from "@/components/Pagination";
 
 export default function PaquetesPage() {
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
   const [toDelete, setToDelete] = useState<PackageRecord | null>(null);
-  const { data, isLoading } = usePackages({ search, pageSize: 100 });
+  const { data, isLoading } = usePackages({ search: useDebounce(search), page, pageSize: 20 });
   const del = useDeletePackage();
 
   return (
@@ -33,7 +36,7 @@ export default function PaquetesPage() {
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-fg" />
         <input
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => { setSearch(e.target.value); setPage(1); }}
           placeholder="Buscar paquete…"
           className="w-full rounded-btn border border-line bg-surface py-2.5 pl-10 pr-3 text-base outline-none focus:border-primary focus:ring-2 focus:ring-ring/30"
         />
@@ -91,6 +94,8 @@ export default function PaquetesPage() {
           ))}
         </div>
       )}
+
+      {data && <Pagination page={data.page} totalPages={data.totalPages} total={data.total} onPage={setPage} />}
 
       <ConfirmDialog
         open={!!toDelete}

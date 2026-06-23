@@ -10,7 +10,9 @@ import { Select } from "@/components/ui/Select";
 import { Textarea } from "@/components/ui/Textarea";
 import { Modal } from "@/components/ui/Modal";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { DataTable, type Column } from "@/components/ui/DataTable";
 import { ApiError } from "@/lib/api";
+import { useTableState } from "@/lib/hooks/useTableState";
 import { SUPPLIER_TYPE_LABELS, SUPPLIER_TYPE_OPTIONS } from "@/lib/options";
 import {
   useSuppliers,
@@ -21,7 +23,14 @@ import {
 } from "@/lib/hooks/useSuppliers";
 
 export default function ProveedoresPage() {
-  const { data, isLoading } = useSuppliers({ pageSize: 100 });
+  const t = useTableState("name", "asc");
+  const { data, isLoading, isError } = useSuppliers({
+    search: t.debouncedSearch,
+    page: t.page,
+    pageSize: 20,
+    sortBy: t.sortBy,
+    sortDir: t.sortDir,
+  });
   const create = useCreateSupplier();
   const del = useDeleteSupplier();
 
@@ -29,74 +38,58 @@ export default function ProveedoresPage() {
   const [creating, setCreating] = useState(false);
   const [toDelete, setToDelete] = useState<SupplierRecord | null>(null);
 
+  const columns: Column<SupplierRecord>[] = [
+    { key: "name", header: "Nombre", render: (s) => <span className="font-medium text-foreground">{s.name}</span> },
+    { key: "type", header: "Tipo", render: (s) => <span className="rounded-full bg-secondary/15 px-2 py-0.5 text-xs text-foreground">{SUPPLIER_TYPE_LABELS[s.type]}</span> },
+    {
+      header: "Contacto",
+      render: (s) => (
+        <div className="text-muted-fg">
+          {s.email ?? "—"}
+          {s.phone && <span className="block text-xs">{s.phone}</span>}
+        </div>
+      ),
+    },
+    {
+      header: "Acciones",
+      align: "right",
+      render: (s) => (
+        <div className="flex items-center justify-end gap-1">
+          <button onClick={() => setEditing(s)} className="grid h-8 w-8 cursor-pointer place-items-center rounded-btn text-muted-fg hover:bg-primary/10 hover:text-primary" aria-label="Editar"><Pencil className="h-4 w-4" /></button>
+          <button onClick={() => setToDelete(s)} className="grid h-8 w-8 cursor-pointer place-items-center rounded-btn text-muted-fg hover:bg-destructive/10 hover:text-destructive" aria-label="Eliminar"><Trash2 className="h-4 w-4" /></button>
+        </div>
+      ),
+    },
+  ];
+
   return (
     <div className="mx-auto max-w-5xl">
       <PageHeader
         title="Proveedores"
         description="Hoteles, transporte, guías y seguros usados para calcular el costo de los viajes."
-        action={
-          <Button onClick={() => setCreating(true)}>
-            <Plus className="h-4 w-4" /> Nuevo proveedor
-          </Button>
-        }
+        action={<Button onClick={() => setCreating(true)}><Plus className="h-4 w-4" /> Nuevo proveedor</Button>}
       />
 
-      <div className="overflow-hidden rounded-card border border-line bg-surface shadow-sm">
-        {isLoading ? (
-          <div className="grid place-items-center py-16">
-            <span className="h-7 w-7 animate-spin rounded-full border-2 border-primary border-t-transparent" aria-label="Cargando" />
-          </div>
-        ) : !data || data.items.length === 0 ? (
-          <div className="grid place-items-center gap-3 px-6 py-16 text-center">
-            <span className="grid h-12 w-12 place-items-center rounded-full bg-primary/10 text-primary">
-              <Truck className="h-6 w-6" />
-            </span>
-            <p className="font-medium text-foreground">Aún no hay proveedores</p>
-            <Button variant="secondary" onClick={() => setCreating(true)}>
-              <Plus className="h-4 w-4" /> Crear el primero
-            </Button>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="border-b border-line bg-muted/50 text-xs uppercase tracking-wide text-muted-fg">
-                <tr>
-                  <th className="px-4 py-3 font-semibold">Nombre</th>
-                  <th className="px-4 py-3 font-semibold">Tipo</th>
-                  <th className="px-4 py-3 font-semibold">Contacto</th>
-                  <th className="px-4 py-3 text-right font-semibold">Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.items.map((s) => (
-                  <tr key={s.id} className="border-b border-line/60 last:border-0 hover:bg-muted/30">
-                    <td className="px-4 py-3 font-medium text-foreground">{s.name}</td>
-                    <td className="px-4 py-3">
-                      <span className="rounded-full bg-secondary/15 px-2 py-0.5 text-xs text-foreground">
-                        {SUPPLIER_TYPE_LABELS[s.type]}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-muted-fg">
-                      {s.email ?? "—"}
-                      {s.phone && <span className="block text-xs">{s.phone}</span>}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center justify-end gap-1">
-                        <button onClick={() => setEditing(s)} className="grid h-8 w-8 cursor-pointer place-items-center rounded-btn text-muted-fg hover:bg-primary/10 hover:text-primary" aria-label="Editar">
-                          <Pencil className="h-4 w-4" />
-                        </button>
-                        <button onClick={() => setToDelete(s)} className="grid h-8 w-8 cursor-pointer place-items-center rounded-btn text-muted-fg hover:bg-destructive/10 hover:text-destructive" aria-label="Eliminar">
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+      <DataTable
+        columns={columns}
+        rows={data?.items}
+        getRowKey={(s) => s.id}
+        loading={isLoading}
+        error={isError}
+        emptyIcon={<Truck className="h-6 w-6" />}
+        emptyTitle={t.debouncedSearch ? "Sin resultados" : "Aún no hay proveedores"}
+        emptyAction={!t.debouncedSearch ? <Button variant="secondary" onClick={() => setCreating(true)}><Plus className="h-4 w-4" /> Crear el primero</Button> : undefined}
+        search={t.search}
+        onSearch={t.onSearch}
+        searchPlaceholder="Buscar proveedor…"
+        sortBy={t.sortBy}
+        sortDir={t.sortDir}
+        onSort={t.onSort}
+        page={data?.page}
+        totalPages={data?.totalPages}
+        total={data?.total}
+        onPage={t.setPage}
+      />
 
       <Modal open={creating} title="Nuevo proveedor" onClose={() => setCreating(false)}>
         <SupplierFormFields
@@ -194,12 +187,8 @@ function SupplierFormFields({
       <Input label="Teléfono" value={phone} onChange={(e) => setPhone(e.target.value)} />
       <Textarea label="Notas" rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
       <div className="flex justify-end gap-3 pt-2">
-        <Button type="button" variant="ghost" onClick={onCancel}>
-          Cancelar
-        </Button>
-        <Button type="submit" loading={submitting}>
-          Guardar
-        </Button>
+        <Button type="button" variant="ghost" onClick={onCancel}>Cancelar</Button>
+        <Button type="submit" loading={submitting}>Guardar</Button>
       </div>
     </form>
   );

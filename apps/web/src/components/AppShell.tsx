@@ -12,6 +12,11 @@ import {
   Truck,
   Coins,
   Building2,
+  FileText,
+  ClipboardList,
+  CalendarDays,
+  Layers,
+  UserCog,
   LogOut,
   Menu,
   X,
@@ -34,9 +39,14 @@ const NAV: NavItem[] = [
   { href: "/destinos", label: "Destinos", icon: MapPin },
   { href: "/paquetes", label: "Paquetes", icon: Package },
   { href: "/viajes", label: "Viajes", icon: Plane },
+  { href: "/cotizaciones", label: "Cotizaciones", icon: FileText },
+  { href: "/reservas", label: "Reservas", icon: ClipboardList },
+  { href: "/calendario", label: "Calendario", icon: CalendarDays },
   { href: "/proveedores", label: "Proveedores", icon: Truck },
   { href: "/tipos-cambio", label: "Tipos de cambio", icon: Coins, roles: ["AGENCY_ADMIN", "SUPER_ADMIN"] },
+  { href: "/usuarios", label: "Usuarios", icon: UserCog, roles: ["AGENCY_ADMIN"] },
   { href: "/agencias", label: "Agencias", icon: Building2, roles: ["SUPER_ADMIN"] },
+  { href: "/planes", label: "Planes", icon: Layers, roles: ["SUPER_ADMIN"] },
 ];
 
 const ROLE_LABEL: Record<string, string> = {

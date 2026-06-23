@@ -2,7 +2,8 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Currency, TripInput, TripMargin, TripStatus, Paginated } from "@clickviajes/shared";
-import { apiFetch } from "@/lib/api";
+import { apiFetch, ApiError } from "@/lib/api";
+import { toast } from "@/components/ui/Toast";
 
 export interface TripDestinationLink {
   destination: { id: string; name: string; country: string };
@@ -77,7 +78,10 @@ export function useCreateTrip() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (input: TripInput) => apiFetch<TripRecord>("/trips", { method: "POST", body: input }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["trips"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["trips"] });
+      toast.success("Viaje creado");
+    },
   });
 }
 
@@ -85,7 +89,10 @@ export function useUpdateTrip(id: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (input: TripInput) => apiFetch<TripRecord>(`/trips/${id}`, { method: "PUT", body: input }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["trips"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["trips"] });
+      toast.success("Viaje actualizado");
+    },
   });
 }
 
@@ -93,6 +100,10 @@ export function useDeleteTrip() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => apiFetch(`/trips/${id}`, { method: "DELETE" }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["trips"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["trips"] });
+      toast.success("Viaje eliminado");
+    },
+    onError: (e) => toast.error(e instanceof ApiError ? e.message : "No se pudo eliminar"),
   });
 }

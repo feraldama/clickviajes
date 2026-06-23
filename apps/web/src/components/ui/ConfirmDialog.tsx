@@ -50,7 +50,7 @@ export function ConfirmDialog({
           <Button
             onClick={onConfirm}
             loading={loading}
-            className="!bg-destructive hover:!bg-destructive/90"
+            className="bg-destructive! hover:bg-destructive/90!"
           >
             {confirmLabel}
           </Button>

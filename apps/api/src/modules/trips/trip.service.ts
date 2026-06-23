@@ -2,7 +2,7 @@ import type { TripInput, TripListQuery, TripMargin, Paginated, Currency } from "
 import { Prisma } from "@prisma/client";
 import { prisma, prismaBase } from "../../lib/prisma.js";
 import { currentTenantId } from "../../lib/tenant-context.js";
-import { convert } from "../../lib/currency.js";
+import { buildConverter, type Converter } from "../../lib/currency.js";
 import { AppError } from "../../utils/app-error.js";
 
 const include = {
@@ -32,15 +32,15 @@ async function assertOwned(model: "destination" | "supplier", ids: string[]) {
 }
 
 /** Calcula el margen del viaje convertido a la moneda base del tenant. */
-async function computeMargin(trip: TripWithRelations, baseCurrency: Currency): Promise<TripMargin> {
+function computeMargin(trip: TripWithRelations, baseCurrency: Currency, conv: Converter): TripMargin {
   let incomplete = false;
 
-  const saleBase = await convert(trip.salePrice, trip.saleCurrency as Currency, baseCurrency);
+  const saleBase = conv(trip.salePrice, trip.saleCurrency as Currency, baseCurrency);
   if (saleBase === null) incomplete = true;
 
   let totalCost = new Prisma.Decimal(0);
   for (const ts of trip.suppliers) {
-    const c = await convert(ts.cost, ts.costCurrency as Currency, baseCurrency);
+    const c = conv(ts.cost, ts.costCurrency as Currency, baseCurrency);
     if (c === null) incomplete = true;
     else totalCost = totalCost.plus(c);
   }
@@ -73,7 +73,8 @@ export async function listTrips(query: TripListQuery): Promise<Paginated<unknown
     prisma.trip.count({ where }),
   ]);
 
-  const items = await Promise.all(rows.map(async (t) => serialize(t, await computeMargin(t, baseCurrency))));
+  const conv = await buildConverter();
+  const items = rows.map((t) => serialize(t, computeMargin(t, baseCurrency, conv)));
   return { items, total, page, pageSize, totalPages: Math.ceil(total / pageSize) || 1 };
 }
 
@@ -83,7 +84,7 @@ export async function getTrip(id: string) {
   const trip = await prisma.trip.findFirst({ where: { id }, include });
   if (!trip) throw AppError.notFound("Viaje no encontrado");
   const baseCurrency = await getBaseCurrency(tenantId);
-  return serialize(trip, await computeMargin(trip, baseCurrency));
+  return serialize(trip, computeMargin(trip, baseCurrency, await buildConverter()));
 }
 
 function nestedWrites(input: TripInput, tenantId: string) {
@@ -130,7 +131,7 @@ export async function createTrip(input: TripInput) {
     },
     include,
   });
-  return serialize(created, await computeMargin(created, await getBaseCurrency(tenantId)));
+  return serialize(created, computeMargin(created, await getBaseCurrency(tenantId), await buildConverter()));
 }
 
 export async function updateTrip(id: string, input: TripInput) {
@@ -166,7 +167,7 @@ export async function updateTrip(id: string, input: TripInput) {
       include,
     });
   });
-  return serialize(updated, await computeMargin(updated, await getBaseCurrency(tenantId)));
+  return serialize(updated, computeMargin(updated, await getBaseCurrency(tenantId), await buildConverter()));
 }
 
 export async function deleteTrip(id: string) {

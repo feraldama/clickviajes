@@ -3,6 +3,7 @@
 import { useState, type ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "./auth";
+import { ToastViewport } from "@/components/ui/Toast";
 
 export function Providers({ children }: { children: ReactNode }) {
   const [client] = useState(
@@ -17,6 +18,7 @@ export function Providers({ children }: { children: ReactNode }) {
   return (
     <QueryClientProvider client={client}>
       <AuthProvider>{children}</AuthProvider>
+      <ToastViewport />
     </QueryClientProvider>
   );
 }

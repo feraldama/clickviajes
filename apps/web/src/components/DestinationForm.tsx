@@ -148,7 +148,7 @@ export function DestinationForm({ initial, submitting, onSubmit }: Props) {
       <section className="rounded-card border border-line bg-surface p-6 shadow-sm">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="font-display text-lg text-foreground">Atracciones / actividades</h2>
-          <Button type="button" variant="secondary" onClick={addAttr} className="!px-3 !py-1.5 text-xs">
+          <Button type="button" variant="secondary" onClick={addAttr} className="px-3! py-1.5! text-xs">
             <Plus className="h-4 w-4" /> Agregar
           </Button>
         </div>

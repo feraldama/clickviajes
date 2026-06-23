@@ -2,7 +2,8 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Currency, PackageInput, Paginated } from "@clickviajes/shared";
-import { apiFetch } from "@/lib/api";
+import { apiFetch, ApiError } from "@/lib/api";
+import { toast } from "@/components/ui/Toast";
 
 export interface PackageDestinationLink {
   destination: { id: string; name: string; country: string };
@@ -57,7 +58,10 @@ export function useCreatePackage() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (input: PackageInput) => apiFetch<PackageRecord>("/packages", { method: "POST", body: input }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["packages"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["packages"] });
+      toast.success("Paquete creado");
+    },
   });
 }
 
@@ -65,7 +69,10 @@ export function useUpdatePackage(id: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (input: PackageInput) => apiFetch<PackageRecord>(`/packages/${id}`, { method: "PUT", body: input }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["packages"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["packages"] });
+      toast.success("Paquete actualizado");
+    },
   });
 }
 
@@ -73,6 +80,10 @@ export function useDeletePackage() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => apiFetch(`/packages/${id}`, { method: "DELETE" }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["packages"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["packages"] });
+      toast.success("Paquete eliminado");
+    },
+    onError: (e) => toast.error(e instanceof ApiError ? e.message : "No se pudo eliminar"),
   });
 }

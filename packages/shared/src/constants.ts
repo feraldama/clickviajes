@@ -16,6 +16,13 @@ export const CURRENCY_LABELS: Record<Currency, string> = {
 export const USER_ROLES = ["SUPER_ADMIN", "AGENCY_ADMIN", "SELLER"] as const;
 export type UserRole = (typeof USER_ROLES)[number];
 
+/** Roles asignables dentro de una agencia (sin SUPER_ADMIN). */
+export const AGENCY_ROLES = ["AGENCY_ADMIN", "SELLER"] as const;
+export type AgencyRole = (typeof AGENCY_ROLES)[number];
+
+export const TENANT_STATUSES = ["ACTIVE", "SUSPENDED"] as const;
+export type TenantStatus = (typeof TENANT_STATUSES)[number];
+
 export const TRIP_STATUSES = ["SCHEDULED", "IN_PROGRESS", "FINISHED", "CANCELLED"] as const;
 export type TripStatus = (typeof TRIP_STATUSES)[number];
 

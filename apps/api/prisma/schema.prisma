@@ -129,6 +129,8 @@ model User {
 
   tenant        Tenant?        @relation(fields: [tenantId], references: [id])
   refreshTokens RefreshToken[]
+  quotesSold    Quote[]        @relation("QuoteSeller")
+  bookingsSold  Booking[]      @relation("BookingSeller")
 
   @@index([tenantId])
 }
@@ -363,6 +365,7 @@ model Quote {
   tenant   Tenant   @relation(fields: [tenantId], references: [id])
   customer Customer @relation(fields: [customerId], references: [id])
   trip     Trip?    @relation(fields: [tripId], references: [id])
+  seller   User     @relation("QuoteSeller", fields: [sellerId], references: [id])
   booking  Booking? // si se convierte en reserva
 
   @@index([tenantId, status])
@@ -388,6 +391,7 @@ model Booking {
   tenant       Tenant        @relation(fields: [tenantId], references: [id])
   customer     Customer      @relation(fields: [customerId], references: [id])
   trip         Trip          @relation(fields: [tripId], references: [id])
+  seller       User          @relation("BookingSeller", fields: [sellerId], references: [id])
   quote        Quote?        @relation(fields: [quoteId], references: [id])
   passengers   Passenger[]
   installments Installment[]

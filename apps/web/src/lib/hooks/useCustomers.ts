@@ -2,7 +2,8 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { CustomerInput, DocumentType, Paginated } from "@clickviajes/shared";
-import { apiFetch } from "@/lib/api";
+import { apiFetch, ApiError } from "@/lib/api";
+import { toast } from "@/components/ui/Toast";
 
 export interface CustomerDocumentRecord {
   id: string;
@@ -32,6 +33,8 @@ interface ListParams {
   search?: string;
   page?: number;
   pageSize?: number;
+  sortBy?: string;
+  sortDir?: "asc" | "desc";
 }
 
 function qs(params: ListParams): string {
@@ -39,6 +42,8 @@ function qs(params: ListParams): string {
   if (params.search) sp.set("search", params.search);
   if (params.page) sp.set("page", String(params.page));
   if (params.pageSize) sp.set("pageSize", String(params.pageSize));
+  if (params.sortBy) sp.set("sortBy", params.sortBy);
+  if (params.sortDir) sp.set("sortDir", params.sortDir);
   const s = sp.toString();
   return s ? `?${s}` : "";
 }
@@ -63,7 +68,10 @@ export function useCreateCustomer() {
   return useMutation({
     mutationFn: (input: CustomerInput) =>
       apiFetch<CustomerRecord>("/customers", { method: "POST", body: input }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["customers"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["customers"] });
+      toast.success("Cliente creado");
+    },
   });
 }
 
@@ -72,7 +80,10 @@ export function useUpdateCustomer(id: string) {
   return useMutation({
     mutationFn: (input: CustomerInput) =>
       apiFetch<CustomerRecord>(`/customers/${id}`, { method: "PUT", body: input }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["customers"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["customers"] });
+      toast.success("Cliente actualizado");
+    },
   });
 }
 
@@ -80,6 +91,10 @@ export function useDeleteCustomer() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => apiFetch(`/customers/${id}`, { method: "DELETE" }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["customers"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["customers"] });
+      toast.success("Cliente eliminado");
+    },
+    onError: (e) => toast.error(e instanceof ApiError ? e.message : "No se pudo eliminar"),
   });
 }

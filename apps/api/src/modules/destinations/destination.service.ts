@@ -95,6 +95,13 @@ export async function updateDestination(id: string, input: DestinationInput) {
 }
 
 export async function deleteDestination(id: string) {
-  await getDestination(id);
+  await getDestination(id); // valida tenant + existencia
+  const [inPackages, inTrips] = await Promise.all([
+    prisma.packageDestination.count({ where: { destinationId: id } }),
+    prisma.tripDestination.count({ where: { destinationId: id } }),
+  ]);
+  if (inPackages + inTrips > 0) {
+    throw AppError.conflict("No se puede eliminar: el destino está usado en paquetes o viajes");
+  }
   await prisma.destination.delete({ where: { id } });
 }

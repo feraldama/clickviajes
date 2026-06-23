@@ -7,13 +7,15 @@ import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { useDestinations, useDeleteDestination, type DestinationRecord } from "@/lib/hooks/useDestinations";
+import { useDebounce } from "@/lib/hooks/useDebounce";
+import { Pagination } from "@/components/Pagination";
 
 export default function DestinosPage() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [toDelete, setToDelete] = useState<DestinationRecord | null>(null);
 
-  const { data, isLoading, isError } = useDestinations({ search, page, pageSize: 20 });
+  const { data, isLoading, isError } = useDestinations({ search: useDebounce(search), page, pageSize: 20 });
   const del = useDeleteDestination();
 
   async function confirmDelete() {
@@ -113,6 +115,8 @@ export default function DestinosPage() {
           ))}
         </div>
       )}
+
+      {data && <Pagination page={data.page} totalPages={data.totalPages} total={data.total} onPage={setPage} />}
 
       <ConfirmDialog
         open={!!toDelete}

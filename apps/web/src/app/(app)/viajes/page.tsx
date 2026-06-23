@@ -10,13 +10,16 @@ import { Select } from "@/components/ui/Select";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { TRIP_STATUS_LABELS, TRIP_STATUS_OPTIONS, TRIP_STATUS_STYLES } from "@/lib/options";
 import { MarginValue } from "@/components/MarginValue";
+import { Pagination } from "@/components/Pagination";
 import { useTrips, useDeleteTrip, type TripRecord } from "@/lib/hooks/useTrips";
+import { useDebounce } from "@/lib/hooks/useDebounce";
 
 export default function ViajesPage() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<TripStatus | "">("");
+  const [page, setPage] = useState(1);
   const [toDelete, setToDelete] = useState<TripRecord | null>(null);
-  const { data, isLoading } = useTrips({ search, status: status || undefined, pageSize: 100 });
+  const { data, isLoading } = useTrips({ search: useDebounce(search), status: status || undefined, page, pageSize: 20 });
   const del = useDeleteTrip();
 
   return (
@@ -38,7 +41,7 @@ export default function ViajesPage() {
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-fg" />
           <input
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
             placeholder="Buscar viaje…"
             className="w-full rounded-btn border border-line bg-surface py-2.5 pl-10 pr-3 text-base outline-none focus:border-primary focus:ring-2 focus:ring-ring/30"
           />
@@ -48,7 +51,7 @@ export default function ViajesPage() {
             label=""
             aria-label="Filtrar por estado"
             value={status}
-            onChange={(e) => setStatus(e.target.value as TripStatus | "")}
+            onChange={(e) => { setStatus(e.target.value as TripStatus | ""); setPage(1); }}
             options={[{ value: "", label: "Todos los estados" }, ...TRIP_STATUS_OPTIONS]}
           />
         </div>
@@ -123,6 +126,8 @@ export default function ViajesPage() {
           ))}
         </div>
       )}
+
+      {data && <Pagination page={data.page} totalPages={data.totalPages} total={data.total} onPage={setPage} />}
 
       <ConfirmDialog
         open={!!toDelete}

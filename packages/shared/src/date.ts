@@ -63,3 +63,32 @@ export function fechaIsoDesdeInput(valor: string): string | null {
   const dia = String(d.getDate()).padStart(2, "0");
   return `${d.getFullYear()}-${mes}-${dia}`;
 }
+
+/**
+ * Convierte cualquier fecha al valor `aaaa-mm-dd` que espera un
+ * `<input type="date">` nativo. Cadena vacía si la entrada es inválida.
+ */
+export function fechaInputValue(valor: Date | string | number | null | undefined): string {
+  const d = aDate(valor);
+  if (!d) return "";
+  const mes = String(d.getMonth() + 1).padStart(2, "0");
+  const dia = String(d.getDate()).padStart(2, "0");
+  return `${d.getFullYear()}-${mes}-${dia}`;
+}
+
+/**
+ * Parsea el valor `aaaa-mm-dd` de un `<input type="date">` a un Date
+ * (medianoche en hora local), o null si está vacío o es inválido.
+ */
+export function fechaDesdeInput(valor: string): Date | null {
+  const m = valor.trim().match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (!m) return null;
+  const anio = Number(m[1]);
+  const mes = Number(m[2]);
+  const dia = Number(m[3]);
+  const d = new Date(anio, mes - 1, dia);
+  if (d.getDate() !== dia || d.getMonth() !== mes - 1 || d.getFullYear() !== anio) {
+    return null;
+  }
+  return d;
+}

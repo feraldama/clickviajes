@@ -1,8 +1,9 @@
 import crypto from "node:crypto";
 import bcrypt from "bcryptjs";
 import type { User } from "@prisma/client";
-import type { AuthResponse, UserDTO } from "@clickviajes/shared";
+import type { AuthResponse, RegisterAgencyInput, UserDTO } from "@clickviajes/shared";
 import { prismaBase } from "../../lib/prisma.js";
+import { env } from "../../config/env.js";
 import { AppError } from "../../utils/app-error.js";
 import {
   getTokenExpiry,
@@ -52,7 +53,33 @@ export async function login(email: string, password: string): Promise<AuthRespon
   const ok = await bcrypt.compare(password, user.passwordHash);
   if (!ok) throw AppError.unauthorized("Credenciales inválidas");
 
+  // Bloquea el acceso si la agencia del usuario está suspendida.
+  if (user.tenantId) {
+    const tenant = await prismaBase.tenant.findUnique({ where: { id: user.tenantId } });
+    if (tenant?.status === "SUSPENDED") {
+      throw AppError.forbidden("La agencia está suspendida. Contacta al administrador de la plataforma.");
+    }
+  }
+
   return issueTokens(user);
+}
+
+/** Registro público de una nueva agencia (onboarding): crea tenant + admin. */
+export async function registerAgency(input: RegisterAgencyInput): Promise<void> {
+  await prismaBase.$transaction(async (tx) => {
+    const tenant = await tx.tenant.create({
+      data: { name: input.name, slug: input.slug, baseCurrency: input.baseCurrency, status: "ACTIVE" },
+    });
+    await tx.user.create({
+      data: {
+        tenantId: tenant.id,
+        email: input.adminEmail,
+        passwordHash: bcrypt.hashSync(input.adminPassword, env.BCRYPT_ROUNDS),
+        fullName: input.adminName,
+        role: "AGENCY_ADMIN",
+      },
+    });
+  });
 }
 
 /** Rota el refresh token: revoca el actual y emite uno nuevo. */

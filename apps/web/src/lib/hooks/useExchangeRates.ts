@@ -2,7 +2,8 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Currency, ExchangeRateInput, Paginated } from "@clickviajes/shared";
-import { apiFetch } from "@/lib/api";
+import { apiFetch, ApiError } from "@/lib/api";
+import { toast } from "@/components/ui/Toast";
 
 export interface ExchangeRateRecord {
   id: string;
@@ -24,7 +25,10 @@ export function useCreateExchangeRate() {
   return useMutation({
     mutationFn: (input: ExchangeRateInput) =>
       apiFetch<ExchangeRateRecord>("/exchange-rates", { method: "POST", body: input }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["exchange-rates"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["exchange-rates"] });
+      toast.success("Tasa agregada");
+    },
   });
 }
 
@@ -32,6 +36,10 @@ export function useDeleteExchangeRate() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => apiFetch(`/exchange-rates/${id}`, { method: "DELETE" }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["exchange-rates"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["exchange-rates"] });
+      toast.success("Tasa eliminada");
+    },
+    onError: (e) => toast.error(e instanceof ApiError ? e.message : "No se pudo eliminar"),
   });
 }

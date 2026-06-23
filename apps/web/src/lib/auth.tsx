@@ -1,8 +1,13 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import type { AuthResponse, LoginInput, UserDTO } from "@clickviajes/shared";
+import type { LoginInput, UserDTO } from "@clickviajes/shared";
 import { apiFetch, tokenStore } from "./api";
+
+interface SessionResponse {
+  accessToken: string;
+  user: UserDTO;
+}
 
 interface AuthContextValue {
   user: UserDTO | null;
@@ -17,14 +22,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserDTO | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Al cargar, si hay token, recupera el usuario actual.
+  // Al cargar, intenta recuperar la sesión: /auth/me dispara un refresh vía la
+  // cookie httpOnly si el access token (en memoria) aún no existe.
   useEffect(() => {
     let active = true;
     async function init() {
-      if (!tokenStore.access && !tokenStore.refresh) {
-        setLoading(false);
-        return;
-      }
       try {
         const me = await apiFetch<UserDTO>("/auth/me");
         if (active) setUser(me);
@@ -41,22 +43,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   async function login(input: LoginInput) {
-    const res = await apiFetch<AuthResponse>("/auth/login", {
+    const res = await apiFetch<SessionResponse>("/auth/login", {
       method: "POST",
       body: input,
       auth: false,
     });
-    tokenStore.set(res.accessToken, res.refreshToken);
+    tokenStore.set(res.accessToken);
     setUser(res.user);
   }
 
   async function logout() {
     try {
-      await apiFetch("/auth/logout", {
-        method: "POST",
-        body: { refreshToken: tokenStore.refresh },
-        auth: false,
-      });
+      await apiFetch("/auth/logout", { method: "POST", auth: false });
     } catch {
       // ignora errores de red al cerrar sesión
     }

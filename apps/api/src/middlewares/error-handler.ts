@@ -1,5 +1,6 @@
 import type { NextFunction, Request, Response } from "express";
 import { ZodError } from "zod";
+import { Prisma } from "@prisma/client";
 import { AppError } from "../utils/app-error.js";
 import { sendError } from "../utils/api-response.js";
 import { isProduction } from "../config/env.js";
@@ -17,6 +18,19 @@ export function errorHandler(err: unknown, _req: Request, res: Response, _next: 
 
   if (err instanceof ZodError) {
     return sendError(res, 400, "VALIDATION_ERROR", "Datos de entrada inválidos", err.flatten());
+  }
+
+  // Errores conocidos de Prisma → respuestas amigables.
+  if (err instanceof Prisma.PrismaClientKnownRequestError) {
+    if (err.code === "P2002") {
+      return sendError(res, 409, "CONFLICT", "Ya existe un registro con esos datos únicos");
+    }
+    if (err.code === "P2003") {
+      return sendError(res, 409, "IN_USE", "No se puede completar: el recurso está en uso o referencia datos inexistentes");
+    }
+    if (err.code === "P2025") {
+      return sendError(res, 404, "NOT_FOUND", "Recurso no encontrado");
+    }
   }
 
   // Error no controlado.
