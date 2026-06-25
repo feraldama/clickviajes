@@ -2,6 +2,7 @@ import bcrypt from "bcryptjs";
 import type { CreateTenantInput, UpdateTenantInput } from "@clickviajes/shared";
 import { prismaBase } from "../../lib/prisma.js";
 import { env } from "../../config/env.js";
+import { recordAudit } from "../../lib/audit.js";
 import { AppError } from "../../utils/app-error.js";
 
 const include = {
@@ -15,7 +16,7 @@ export async function listTenants() {
 
 export async function createTenant(input: CreateTenantInput) {
   // slug y email únicos → si chocan, P2002 → 409 (manejado por errorHandler).
-  return prismaBase.$transaction(async (tx) => {
+  const created = await prismaBase.$transaction(async (tx) => {
     const tenant = await tx.tenant.create({
       data: {
         name: input.name,
@@ -37,12 +38,14 @@ export async function createTenant(input: CreateTenantInput) {
     });
     return tx.tenant.findUnique({ where: { id: tenant.id }, include });
   });
+  await recordAudit("tenant.create", "Tenant", created?.id ?? null, `Agencia creada: ${input.name} (${input.slug})`);
+  return created;
 }
 
 export async function updateTenant(id: string, input: UpdateTenantInput) {
   const tenant = await prismaBase.tenant.findUnique({ where: { id } });
   if (!tenant) throw AppError.notFound("Agencia no encontrada");
-  return prismaBase.tenant.update({
+  const updated = await prismaBase.tenant.update({
     where: { id },
     data: {
       name: input.name,
@@ -53,4 +56,6 @@ export async function updateTenant(id: string, input: UpdateTenantInput) {
     },
     include,
   });
+  await recordAudit("tenant.update", "Tenant", id, `Agencia actualizada: ${input.name} · ${input.status}`);
+  return updated;
 }

@@ -41,6 +41,11 @@ async function issueTokens(user: User): Promise<AuthResponse> {
     data: { userId: user.id, tokenHash: hashToken(refreshToken), expiresAt },
   });
 
+  // Limpieza oportunista: descarta los tokens vencidos o revocados del usuario.
+  await prismaBase.refreshToken.deleteMany({
+    where: { userId: user.id, OR: [{ expiresAt: { lt: new Date() } }, { revokedAt: { not: null } }] },
+  });
+
   return { accessToken, refreshToken, user: toUserDTO(user) };
 }
 

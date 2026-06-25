@@ -17,6 +17,7 @@ import {
   CalendarDays,
   Layers,
   UserCog,
+  Activity,
   LogOut,
   Menu,
   X,
@@ -45,6 +46,7 @@ const NAV: NavItem[] = [
   { href: "/proveedores", label: "Proveedores", icon: Truck },
   { href: "/tipos-cambio", label: "Tipos de cambio", icon: Coins, roles: ["AGENCY_ADMIN", "SUPER_ADMIN"] },
   { href: "/usuarios", label: "Usuarios", icon: UserCog, roles: ["AGENCY_ADMIN"] },
+  { href: "/actividad", label: "Actividad", icon: Activity, roles: ["AGENCY_ADMIN"] },
   { href: "/agencias", label: "Agencias", icon: Building2, roles: ["SUPER_ADMIN"] },
   { href: "/planes", label: "Planes", icon: Layers, roles: ["SUPER_ADMIN"] },
 ];

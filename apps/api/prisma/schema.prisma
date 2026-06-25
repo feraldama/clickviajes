@@ -94,6 +94,7 @@ model Tenant {
   // Preparado para SaaS (inactivo por ahora):
   planId       String?
   maxUsers     Int?
+  receiptSeq   Int          @default(0) // contador correlativo de recibos de pago
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
 
@@ -136,8 +137,25 @@ model User {
   refreshTokens RefreshToken[]
   quotesSold    Quote[]        @relation("QuoteSeller")
   bookingsSold  Booking[]      @relation("BookingSeller")
+  auditLogs     AuditLog[]
 
   @@index([tenantId])
+}
+
+/// Registro de auditoría: quién hizo qué y cuándo (entidades sensibles).
+model AuditLog {
+  id        String   @id @default(cuid())
+  tenantId  String? // null = acción de plataforma (super-admin)
+  userId    String?
+  action    String // p. ej. "booking.create", "payment.delete"
+  entity    String // "Booking", "Payment", …
+  entityId  String?
+  summary   String
+  createdAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([tenantId, createdAt])
 }
 
 model RefreshToken {

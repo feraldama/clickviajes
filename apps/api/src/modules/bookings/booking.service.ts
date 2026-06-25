@@ -2,6 +2,7 @@ import type { BookingInput, BookingListQuery, Paginated } from "@clickviajes/sha
 import { Prisma, type BookingStatus } from "@prisma/client";
 import { prisma, prismaBase } from "../../lib/prisma.js";
 import { currentTenantId, getTenantContext } from "../../lib/tenant-context.js";
+import { recordAudit } from "../../lib/audit.js";
 import { AppError } from "../../utils/app-error.js";
 
 const include = {
@@ -83,7 +84,7 @@ export async function createBooking(input: BookingInput) {
   await assertCustomerOwned(input.customerId);
   const { rate, amount } = await resolveCommission(sellerId, input);
 
-  return prisma.$transaction(async (tx) => {
+  const created = await prisma.$transaction(async (tx) => {
     const trip = await tx.trip.findFirst({
       where: { id: input.tripId, tenantId },
       select: { capacity: true, bookedSeats: true },
@@ -129,6 +130,8 @@ export async function createBooking(input: BookingInput) {
       include,
     });
   });
+  await recordAudit("booking.create", "Booking", created.id, `Reserva creada · ${input.paxCount} pax · ${input.totalAmount} ${input.currency}`);
+  return created;
 }
 
 export async function updateBooking(id: string, input: BookingInput) {
@@ -179,7 +182,7 @@ export async function updateBooking(id: string, input: BookingInput) {
 
 export async function changeBookingStatus(id: string, status: BookingStatus) {
   const { tenantId } = await ctx();
-  return prisma.$transaction(async (tx) => {
+  const updated = await prisma.$transaction(async (tx) => {
     const b = await tx.booking.findFirst({ where: { id, tenantId } });
     if (!b) throw AppError.notFound("Reserva no encontrada");
 
@@ -203,11 +206,18 @@ export async function changeBookingStatus(id: string, status: BookingStatus) {
     }
     return tx.booking.update({ where: { id }, data: { status }, include });
   });
+  await recordAudit("booking.status", "Booking", id, `Reserva → estado ${status}`);
+  return updated;
 }
 
 export async function deleteBooking(id: string) {
   const { tenantId } = await ctx();
-  return prisma.$transaction(async (tx) => {
+  // No se puede borrar una reserva con pagos: se perdería el historial financiero.
+  const payCount = await prisma.payment.count({ where: { bookingId: id } });
+  if (payCount > 0) {
+    throw AppError.conflict("La reserva tiene pagos registrados; cancélala en lugar de eliminarla.");
+  }
+  await prisma.$transaction(async (tx) => {
     const b = await tx.booking.findFirst({ where: { id, tenantId } });
     if (!b) throw AppError.notFound("Reserva no encontrada");
     if (b.status !== "CANCELLED") {
@@ -215,4 +225,5 @@ export async function deleteBooking(id: string) {
     }
     await tx.booking.delete({ where: { id } });
   });
+  await recordAudit("booking.delete", "Booking", id, "Reserva eliminada");
 }

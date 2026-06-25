@@ -11,7 +11,7 @@ export function notFoundHandler(req: Request, res: Response) {
 }
 
 /** Manejador central de errores. Última pieza del pipeline de Express. */
-export function errorHandler(err: unknown, _req: Request, res: Response, _next: NextFunction) {
+export function errorHandler(err: unknown, req: Request, res: Response, _next: NextFunction) {
   if (err instanceof AppError) {
     return sendError(res, err.statusCode, err.code, err.message, err.details);
   }
@@ -34,12 +34,12 @@ export function errorHandler(err: unknown, _req: Request, res: Response, _next: 
   }
 
   // Error no controlado.
-  console.error("❌ Error no controlado:", err);
+  console.error(`❌ [${req.id ?? "-"}] Error no controlado:`, err);
   return sendError(
     res,
     500,
     "INTERNAL_ERROR",
     "Ocurrió un error interno",
-    isProduction ? undefined : String(err),
+    { requestId: req.id, ...(isProduction ? {} : { detail: String(err) }) },
   );
 }

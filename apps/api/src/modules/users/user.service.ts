@@ -4,6 +4,7 @@ import type { User } from "@prisma/client";
 import { prismaBase } from "../../lib/prisma.js";
 import { currentTenantId } from "../../lib/tenant-context.js";
 import { env } from "../../config/env.js";
+import { recordAudit } from "../../lib/audit.js";
 import { AppError } from "../../utils/app-error.js";
 
 function toDTO(u: User) {
@@ -58,6 +59,7 @@ export async function createUser(input: CreateUserInput) {
       commissionRate: input.commissionRate ?? null,
     },
   });
+  await recordAudit("user.create", "User", user.id, `Usuario creado: ${input.email} (${input.role})`);
   return toDTO(user);
 }
 
@@ -83,5 +85,7 @@ export async function updateUser(id: string, input: UpdateUserInput) {
   };
   if (input.password) data.passwordHash = bcrypt.hashSync(input.password, env.BCRYPT_ROUNDS);
 
-  return toDTO(await prismaBase.user.update({ where: { id }, data }));
+  const updated = await prismaBase.user.update({ where: { id }, data });
+  await recordAudit("user.update", "User", id, `Usuario actualizado: ${existing.email}${input.isActive ? "" : " (inactivo)"}`);
+  return toDTO(updated);
 }

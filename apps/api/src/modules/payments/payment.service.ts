@@ -3,6 +3,7 @@ import { Prisma, type InstallmentStatus } from "@prisma/client";
 import { prisma, prismaBase } from "../../lib/prisma.js";
 import { currentTenantId, getTenantContext } from "../../lib/tenant-context.js";
 import { buildConverter, getRate } from "../../lib/currency.js";
+import { recordAudit } from "../../lib/audit.js";
 import { AppError } from "../../utils/app-error.js";
 
 async function getBookingOwned(bookingId: string) {
@@ -145,11 +146,16 @@ export async function createPayment(bookingId: string, input: PaymentInput) {
   const baseCurrency = await getBaseCurrency(tenantId);
   const rate = await getRate(currency, baseCurrency, input.paidAt ?? new Date());
 
-  // Nº de recibo correlativo si no se provee.
+  // Nº de recibo correlativo y ATÓMICO por agencia (evita duplicados ante
+  // pagos concurrentes): incrementa un contador del tenant en una sola operación.
   let receiptNumber = input.receiptNumber?.trim() || null;
   if (!receiptNumber) {
-    const count = await prisma.payment.count();
-    receiptNumber = `R-${String(count + 1).padStart(6, "0")}`;
+    const t = await prismaBase.tenant.update({
+      where: { id: tenantId },
+      data: { receiptSeq: { increment: 1 } },
+      select: { receiptSeq: true },
+    });
+    receiptNumber = `R-${String(t.receiptSeq).padStart(6, "0")}`;
   }
 
   const payment = await prisma.payment.create({
@@ -167,6 +173,7 @@ export async function createPayment(bookingId: string, input: PaymentInput) {
     },
   });
   await recomputeInstallmentStatuses(bookingId);
+  await recordAudit("payment.create", "Payment", payment.id, `Pago ${input.amount} ${currency} (${input.method}) · recibo ${receiptNumber}`);
   return payment;
 }
 
@@ -206,4 +213,5 @@ export async function deletePayment(id: string) {
   if (!payment) throw AppError.notFound("Pago no encontrado");
   await prisma.payment.delete({ where: { id } });
   await recomputeInstallmentStatuses(payment.bookingId);
+  await recordAudit("payment.delete", "Payment", id, `Pago eliminado (${payment.amount} ${payment.currency})`);
 }

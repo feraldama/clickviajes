@@ -5,6 +5,7 @@ import cookieParser from "cookie-parser";
 import { env } from "./config/env.js";
 import { attachUser } from "./middlewares/auth.js";
 import { tenantContext } from "./middlewares/tenant.js";
+import { requestLogger } from "./middlewares/request-logger.js";
 import { errorHandler, notFoundHandler } from "./middlewares/error-handler.js";
 import { healthRouter } from "./modules/health/health.routes.js";
 import { authRouter } from "./modules/auth/auth.routes.js";
@@ -22,6 +23,7 @@ import { dashboardRouter } from "./modules/dashboard/dashboard.routes.js";
 import { planRouter } from "./modules/plans/plan.routes.js";
 import { tenantRouter } from "./modules/tenants/tenant.routes.js";
 import { userRouter } from "./modules/users/user.routes.js";
+import { auditRouter } from "./modules/audit/audit.routes.js";
 
 export function createApp() {
   const app = express();
@@ -32,6 +34,9 @@ export function createApp() {
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
   app.use(cookieParser());
+
+  // Observabilidad: requestId + log por petición (antes de auth/rutas).
+  app.use(requestLogger);
 
   // Autenticación: decodifica el token (si existe) ANTES del tenant…
   app.use(attachUser);
@@ -55,6 +60,7 @@ export function createApp() {
   app.use("/plans", planRouter);
   app.use("/tenants", tenantRouter);
   app.use("/users", userRouter);
+  app.use("/audit", auditRouter);
 
   // 404 + manejo central de errores (siempre al final)
   app.use(notFoundHandler);

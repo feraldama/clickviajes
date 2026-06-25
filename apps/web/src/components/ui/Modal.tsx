@@ -1,7 +1,7 @@
 "use client";
 
+import { useEffect, type ReactNode } from "react";
 import { X } from "lucide-react";
-import type { ReactNode } from "react";
 
 interface ModalProps {
   open: boolean;
@@ -11,6 +11,15 @@ interface ModalProps {
 }
 
 export function Modal({ open, title, onClose, children }: ModalProps) {
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [open, onClose]);
+
   if (!open) return null;
   return (
     <div

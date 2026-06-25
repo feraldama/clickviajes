@@ -16,3 +16,4 @@ export * from "./schemas/payment";
 export * from "./schemas/agenda";
 export * from "./schemas/dashboard";
 export * from "./schemas/saas";
+export * from "./schemas/audit";

@@ -11,6 +11,8 @@ declare global {
   namespace Express {
     interface Request {
       auth?: AuthInfo;
+      /** Identificador corto de la petición (para logs y soporte). */
+      id?: string;
     }
   }
 }
