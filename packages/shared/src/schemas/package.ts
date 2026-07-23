@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { CURRENCIES } from "../constants";
+import { moneyNullable } from "../money";
 
 export const packageItineraryItemSchema = z.object({
   id: z.string().optional(),
@@ -12,7 +13,7 @@ export type PackageItineraryItemInput = z.infer<typeof packageItineraryItemSchem
 export const packageSchema = z.object({
   name: z.string().min(1, "El nombre es obligatorio").max(150),
   description: z.string().max(2000).optional().nullable(),
-  basePrice: z.coerce.number().nonnegative().optional().nullable(),
+  basePrice: moneyNullable,
   currency: z.enum(CURRENCIES).default("USD"),
   destinationIds: z.array(z.string()).optional().default([]),
   itinerary: z.array(packageItineraryItemSchema).optional().default([]),

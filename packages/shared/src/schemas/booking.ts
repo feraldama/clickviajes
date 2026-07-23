@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { BOOKING_STATUSES, CURRENCIES, DOCUMENT_TYPES } from "../constants";
+import { money } from "../money";
 
 export const passengerSchema = z.object({
   id: z.string().optional(),
@@ -18,7 +19,7 @@ export const bookingSchema = z
     tripId: z.string().min(1, "Selecciona el viaje"),
     quoteId: z.string().optional().nullable(),
     paxCount: z.coerce.number().int().positive("Debe haber al menos 1 pasajero"),
-    totalAmount: z.coerce.number().nonnegative(),
+    totalAmount: money,
     currency: z.enum(CURRENCIES).default("PYG"),
     commissionRate: z.coerce.number().min(0).max(100).optional().nullable(),
     passengers: z.array(passengerSchema).optional().default([]),

@@ -44,7 +44,7 @@ pnpm db:migrate        # crea la migración inicial y las tablas
 # 4. Cargar datos de ejemplo (super-admin, agencia demo, usuarios)
 pnpm db:seed
 
-# 5. Levantar todo (API en :4000, web en :3000)
+# 5. Levantar todo (API en :3015, web en :3016)
 pnpm dev
 ```
 

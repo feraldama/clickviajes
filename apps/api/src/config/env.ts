@@ -10,8 +10,8 @@ dotenv.config({ path: path.resolve(__dirname, "../../../../.env") });
 const EnvSchema = z.object({
   DATABASE_URL: z.string().min(1, "DATABASE_URL es obligatorio"),
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
-  API_PORT: z.coerce.number().int().positive().default(4000),
-  CORS_ORIGIN: z.string().default("http://localhost:3000"),
+  API_PORT: z.coerce.number().int().positive().default(3015),
+  CORS_ORIGIN: z.string().default("http://localhost:3016"),
   JWT_ACCESS_SECRET: z.string().min(1, "JWT_ACCESS_SECRET es obligatorio"),
   JWT_REFRESH_SECRET: z.string().min(1, "JWT_REFRESH_SECRET es obligatorio"),
   JWT_ACCESS_EXPIRES: z.string().default("15m"),

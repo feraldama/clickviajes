@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { CURRENCIES, TRIP_STATUSES } from "../constants";
+import { money } from "../money";
 
 export const tripItineraryItemSchema = z.object({
   id: z.string().optional(),
@@ -14,7 +15,7 @@ export const tripSupplierSchema = z.object({
   id: z.string().optional(),
   supplierId: z.string().min(1, "Selecciona un proveedor"),
   description: z.string().max(255).optional().nullable(),
-  cost: z.coerce.number().nonnegative("El costo no puede ser negativo"),
+  cost: money,
   costCurrency: z.enum(CURRENCIES).default("USD"),
 });
 export type TripSupplierInput = z.infer<typeof tripSupplierSchema>;
@@ -27,7 +28,7 @@ export const tripSchema = z
     endDate: z.coerce.date(),
     capacity: z.coerce.number().int().positive("El cupo debe ser al menos 1"),
     status: z.enum(TRIP_STATUSES).default("SCHEDULED"),
-    salePrice: z.coerce.number().nonnegative(),
+    salePrice: money,
     saleCurrency: z.enum(CURRENCIES).default("PYG"),
     destinationIds: z.array(z.string()).optional().default([]),
     itinerary: z.array(tripItineraryItemSchema).optional().default([]),

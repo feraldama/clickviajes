@@ -53,7 +53,7 @@ export default function CuentaPage({ params }: { params: Promise<{ id: string }>
       const d = new Date(first);
       d.setMonth(d.getMonth() + i);
       const amt = i === n - 1 ? Math.round((total - per * (n - 1)) * factor) / factor : per;
-      return { dueDate: d, amount: amt };
+      return { dueDate: d, amount: String(amt) };
     });
     setPlan.mutate({ installments });
   }
@@ -66,7 +66,7 @@ export default function CuentaPage({ params }: { params: Promise<{ id: string }>
     const fecha = fechaDesdeInput(paidAt);
     if (!fecha) return setPayError("Fecha inválida");
     createPayment.mutate(
-      { amount: monto, method, installmentId: installmentId || null, paidAt: fecha, currency: cur },
+      { amount: amount.trim(), method, installmentId: installmentId || null, paidAt: fecha, currency: cur },
       { onSuccess: () => setAmount("") },
     );
   }

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { AGENCY_ROLES, CURRENCIES, TENANT_STATUSES } from "../constants";
+import { moneyNullable } from "../money";
 
 const slug = z
   .string()
@@ -11,7 +12,7 @@ const slug = z
 export const planSchema = z.object({
   name: z.string().min(1, "El nombre es obligatorio").max(100),
   maxUsers: z.coerce.number().int().positive().optional().nullable(),
-  price: z.coerce.number().nonnegative().optional().nullable(),
+  price: moneyNullable,
   currency: z.enum(CURRENCIES).default("USD"),
 });
 export type PlanInput = z.infer<typeof planSchema>;

@@ -1,10 +1,11 @@
 import { z } from "zod";
 import { CURRENCIES, PAYMENT_METHODS } from "../constants";
+import { money, moneyPositive } from "../money";
 
 /** Una cuota del plan de pagos. */
 export const installmentInputSchema = z.object({
   dueDate: z.coerce.date(),
-  amount: z.coerce.number().nonnegative(),
+  amount: money,
 });
 export type InstallmentInput = z.infer<typeof installmentInputSchema>;
 
@@ -16,7 +17,7 @@ export type InstallmentPlanInput = z.infer<typeof installmentPlanSchema>;
 
 /** Registro de un pago contra una reserva (opcionalmente imputado a una cuota). */
 export const paymentSchema = z.object({
-  amount: z.coerce.number().positive("El monto debe ser mayor a 0"),
+  amount: moneyPositive,
   method: z.enum(PAYMENT_METHODS),
   installmentId: z.string().optional().nullable(),
   paidAt: z.coerce.date().optional().nullable(),

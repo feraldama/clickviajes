@@ -21,7 +21,7 @@ export default defineConfig({
       JWT_REFRESH_EXPIRES: "7d",
       BCRYPT_ROUNDS: "4",
       API_PORT: "4999",
-      CORS_ORIGIN: "http://localhost:3000",
+      CORS_ORIGIN: "http://localhost:3016",
     },
   },
 });

@@ -1,11 +1,12 @@
 import { z } from "zod";
 import { CURRENCIES, QUOTE_STATUSES } from "../constants";
+import { money } from "../money";
 
 export const quoteSchema = z.object({
   customerId: z.string().min(1, "Selecciona un cliente"),
   tripId: z.string().optional().nullable(),
   validUntil: z.coerce.date().optional().nullable(),
-  totalAmount: z.coerce.number().nonnegative(),
+  totalAmount: money,
   currency: z.enum(CURRENCIES).default("PYG"),
   notes: z.string().max(1000).optional().nullable(),
 });

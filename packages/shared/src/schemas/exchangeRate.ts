@@ -1,11 +1,12 @@
 import { z } from "zod";
 import { CURRENCIES } from "../constants";
+import { moneyPositive } from "../money";
 
 export const exchangeRateSchema = z
   .object({
     fromCurrency: z.enum(CURRENCIES),
     toCurrency: z.enum(CURRENCIES),
-    rate: z.coerce.number().positive("La tasa debe ser mayor a 0"),
+    rate: moneyPositive,
     date: z.coerce.date(),
   })
   .refine((d) => d.fromCurrency !== d.toCurrency, {
