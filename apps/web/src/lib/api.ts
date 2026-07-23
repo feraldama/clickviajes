@@ -3,7 +3,7 @@
  * automático y transparente cuando el access token expira (401).
  */
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3015";
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://181.123.61.216:3015";
 
 // El access token vive solo en memoria (no en localStorage) para reducir la
 // superficie de XSS. El refresh token viaja en una cookie httpOnly que el JS

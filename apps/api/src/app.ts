@@ -2,7 +2,7 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import cookieParser from "cookie-parser";
-import { env } from "./config/env.js";
+import { corsOrigins } from "./config/env.js";
 import { attachUser } from "./middlewares/auth.js";
 import { tenantContext } from "./middlewares/tenant.js";
 import { requestLogger } from "./middlewares/request-logger.js";
@@ -30,7 +30,7 @@ export function createApp() {
 
   // Seguridad y parsing
   app.use(helmet());
-  app.use(cors({ origin: env.CORS_ORIGIN, credentials: true }));
+  app.use(cors({ origin: corsOrigins, credentials: true }));
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
   app.use(cookieParser());

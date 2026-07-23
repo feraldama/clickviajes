@@ -11,6 +11,7 @@ const EnvSchema = z.object({
   DATABASE_URL: z.string().min(1, "DATABASE_URL es obligatorio"),
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   API_PORT: z.coerce.number().int().positive().default(3015),
+  // Acepta uno o varios orígenes separados por comas.
   CORS_ORIGIN: z.string().default("http://localhost:3016"),
   JWT_ACCESS_SECRET: z.string().min(1, "JWT_ACCESS_SECRET es obligatorio"),
   JWT_REFRESH_SECRET: z.string().min(1, "JWT_REFRESH_SECRET es obligatorio"),
@@ -29,3 +30,8 @@ if (!parsed.success) {
 
 export const env = parsed.data;
 export const isProduction = env.NODE_ENV === "production";
+
+// Lista de orígenes permitidos por CORS (soporta múltiples, separados por comas).
+export const corsOrigins = env.CORS_ORIGIN.split(",")
+  .map((origin) => origin.trim())
+  .filter((origin) => origin.length > 0);
