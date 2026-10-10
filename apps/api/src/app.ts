@@ -28,6 +28,10 @@ import { auditRouter } from "./modules/audit/audit.routes.js";
 export function createApp() {
   const app = express();
 
+  // En el servidor la API corre detrás de Caddy (un solo proxy): sin esto,
+  // el rate limit ve a todos los usuarios con la IP del proxy (127.0.0.1).
+  app.set("trust proxy", 1);
+
   // Seguridad y parsing
   app.use(helmet());
   app.use(cors({ origin: corsOrigins, credentials: true }));
